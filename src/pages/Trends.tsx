@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Helmet } from 'react-helmet-async'
 import { getTrends } from '../api/trends'
 import { TrendSkeleton } from '../components/Skeleton'
 
@@ -57,6 +58,11 @@ export default function Trends() {
 
   return (
     <div>
+      <Helmet>
+        <title>Trends — GitHub Tendency</title>
+        <meta property="og:title" content="Trends — GitHub Tendency" />
+        <meta name="twitter:title" content="Trends — GitHub Tendency" />
+      </Helmet>
       <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-orange-500">Trends</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {trends.map((t: any, i: number) => (

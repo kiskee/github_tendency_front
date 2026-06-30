@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Helmet } from 'react-helmet-async'
 import { searchRepos } from '../api/search'
 import { RepoSkeleton } from '../components/Skeleton'
 
@@ -22,6 +23,11 @@ export default function Search() {
 
   return (
     <div>
+      <Helmet>
+        <title>Search — GitHub Tendency</title>
+        <meta property="og:title" content="Search — GitHub Tendency" />
+        <meta name="twitter:title" content="Search — GitHub Tendency" />
+      </Helmet>
       <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-orange-500">Search Repositories</h2>
       <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 mb-6">
         <input

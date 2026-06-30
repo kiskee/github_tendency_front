@@ -1,5 +1,6 @@
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Helmet } from 'react-helmet-async'
 import { getTrendsStats, getTrends } from '../api/trends'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { CardSkeleton } from '../components/Skeleton'
@@ -97,6 +98,11 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 pb-8">
+      <Helmet>
+        <title>Dashboard — GitHub Tendency</title>
+        <meta property="og:title" content="Dashboard — GitHub Tendency" />
+        <meta name="twitter:title" content="Dashboard — GitHub Tendency" />
+      </Helmet>
       <div className="flex items-center gap-4">
         <div className="h-8 w-1 bg-gradient-to-b from-orange-500 to-red-600 rounded-full" />
         <div>
