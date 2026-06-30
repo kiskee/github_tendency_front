@@ -24,13 +24,13 @@ function App() {
           </svg>
           <span className="hidden sm:inline">GitHub Tendency</span>
         </h1>
-        <NavLink to="/" end className={({ isActive }) => `text-sm sm:text-base ${isActive ? 'text-white' : 'text-gray-500 hover:text-orange-400 transition-colors'}`}>
+        <NavLink to="/" end className={({ isActive }) => `text-sm sm:text-base pb-1 border-b-2 transition-colors ${isActive ? 'text-white border-orange-500' : 'text-gray-500 hover:text-orange-400 border-transparent'}`}>
           Dashboard
         </NavLink>
-        <NavLink to="/search" className={({ isActive }) => `text-sm sm:text-base ${isActive ? 'text-white' : 'text-gray-500 hover:text-orange-400 transition-colors'}`}>
+        <NavLink to="/search" className={({ isActive }) => `text-sm sm:text-base pb-1 border-b-2 transition-colors ${isActive ? 'text-white border-orange-500' : 'text-gray-500 hover:text-orange-400 border-transparent'}`}>
           Search
         </NavLink>
-        <NavLink to="/trends" className={({ isActive }) => `text-sm sm:text-base ${isActive ? 'text-white' : 'text-gray-500 hover:text-orange-400 transition-colors'}`}>
+        <NavLink to="/trends" className={({ isActive }) => `text-sm sm:text-base pb-1 border-b-2 transition-colors ${isActive ? 'text-white border-orange-500' : 'text-gray-500 hover:text-orange-400 border-transparent'}`}>
           Trends
         </NavLink>
 

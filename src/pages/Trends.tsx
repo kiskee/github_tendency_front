@@ -1,96 +1,103 @@
-import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getTrends } from '../api/trends'
+import { TrendSkeleton } from '../components/Skeleton'
+
+const LANG_COLORS: Record<string, string> = {
+  TypeScript: '#3178c6',
+  JavaScript: '#f7df1e',
+  Go: '#00add8',
+  Python: '#3572a5',
+  Rust: '#dea584',
+  Java: '#b07219',
+  'C++': '#f34b7d',
+  Ruby: '#e0115f',
+  HTML: '#e34c26',
+  CSS: '#563d7c',
+  Shell: '#89e051',
+  Kotlin: '#a97bff',
+  Swift: '#ffac45',
+  Dart: '#00b4ab',
+  Unknown: '#6b7280',
+}
+
+function LangDot({ lang }: { lang: string | null }) {
+  const l = lang || 'Unknown'
+  const color = LANG_COLORS[l] || '#6b7280'
+  return (
+    <span className="inline-flex items-center gap-1.5 text-gray-500 text-xs">
+      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+      {l}
+    </span>
+  )
+}
 
 export default function Trends() {
-  const [keywordFilter, setKeywordFilter] = useState('')
-  const [sort, setSort] = useState('')
-
   const { data, isLoading } = useQuery({
-    queryKey: ['trends', keywordFilter, sort],
-    queryFn: () => getTrends({ keyword: keywordFilter || undefined, sort: sort || undefined }),
+    queryKey: ['trends'],
+    queryFn: () => getTrends({}),
   })
 
-  const totalStars = (repos: any[]) => repos.reduce((s: number, r: any) => s + (r.stars || 0), 0)
+  if (isLoading) return (
+    <div>
+      <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-orange-500">Trends</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        {Array.from({ length: 6 }).map((_, i) => <TrendSkeleton key={i} />)}
+      </div>
+    </div>
+  )
+
+  if (!data || data.data.length === 0) return (
+    <div className="text-center py-20">
+      <p className="text-gray-500 text-lg mb-2">No trends data yet</p>
+      <p className="text-gray-600 text-sm">Run a collection from the backend to populate trends</p>
+    </div>
+  )
+
+  const trends = data.data
 
   return (
     <div>
       <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-orange-500">Trends</h2>
-
-      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8">
-        <input
-          type="text"
-          value={keywordFilter}
-          onChange={e => setKeywordFilter(e.target.value)}
-          placeholder="Filter by keyword..."
-          className="bg-gray-900/60 backdrop-blur-sm border border-gray-800/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 flex-1 focus:outline-none focus:border-orange-600/50 focus:ring-1 focus:ring-orange-600/20 transition-all"
-        />
-        <select
-          value={sort}
-          onChange={e => setSort(e.target.value)}
-          className="bg-gray-900/60 backdrop-blur-sm border border-gray-800/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-600/50 transition-all w-full sm:w-auto"
-        >
-          <option value="">Latest</option>
-          <option value="stars">Stars</option>
-          <option value="count">Search Count</option>
-        </select>
-      </div>
-
-      {isLoading && <p className="text-gray-500">Loading...</p>}
-
-      {data && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {data.data.map(trend => {
-            const topRepos = trend.repositories
-              .sort((a: any, b: any) => b.stars - a.stars)
-              .slice(0, 5)
-
-            return (
-              <div key={trend.id} className="bg-gray-900/50 backdrop-blur-xl rounded-xl p-4 sm:p-5 border border-orange-900/30 hover:border-orange-700/60 transition-all duration-300 hover:shadow-lg hover:shadow-orange-600/15 flex flex-col">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-3 gap-2">
-                  <div>
-                    <h3 className="text-base sm:text-lg font-semibold text-orange-500">{trend.keyword}</h3>
-                    <p className="text-xs text-gray-600 mt-0.5">Last: {new Date(trend.last_searched_at).toLocaleString()}</p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                    <span className="text-xs bg-gray-800/80 text-gray-400 px-2.5 py-1 rounded-full whitespace-nowrap">{trend.search_count}x searched</span>
-                    <span className="text-xs bg-red-900/30 text-red-400 px-2.5 py-1 rounded-full whitespace-nowrap">⭐ {totalStars(trend.repositories)}</span>
-                  </div>
-                </div>
-
-                  {topRepos.length > 0 && (
-                  <div className="mt-auto space-y-1.5 sm:space-y-2">
-                    {topRepos.map((repo: any, i: number) => (
-                      <div key={repo.id} className="flex items-center gap-2 sm:gap-3 bg-black/30 rounded-lg px-2.5 sm:px-3 py-2 sm:py-2.5 border border-gray-800/20 hover:border-gray-700/50 transition-all group">
-                        <span className="text-xs text-gray-600 font-mono w-3 sm:w-4 shrink-0">{i + 1}</span>
-                        <div className="min-w-0 flex-1">
-                          <a
-                            href={repo.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs sm:text-sm text-orange-500 hover:underline font-medium truncate block"
-                          >
-                            {repo.full_name}
-                          </a>
-                        </div>
-                        <span className="text-xs text-gray-500 hidden sm:inline">{repo.language}</span>
-                        <span className="text-xs text-red-500 font-medium shrink-0">⭐ {repo.stars}</span>
-                      </div>
-                    ))}
-                    {trend.repositories.length > 5 && (
-                      <p className="text-xs text-gray-600 text-center pt-1">+{trend.repositories.length - 5} more</p>
-                    )}
-                  </div>
-                )}
-
-                {topRepos.length === 0 && (
-                  <p className="text-sm text-gray-600 text-center py-4">No repositories collected</p>
-                )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        {trends.map((t: any, i: number) => (
+          <div key={t.id} className={`bg-gray-900/50 backdrop-blur-xl rounded-xl p-4 sm:p-5 border border-orange-900/30 hover:border-orange-700/60 transition-all duration-300 hover:shadow-lg hover:shadow-orange-600/15 animate-fade-up stagger-${Math.min(i, 8)}`}>
+            <div className="flex flex-wrap items-start justify-between gap-2 mb-4">
+              <div className="min-w-0">
+                <h3 className="text-base sm:text-lg font-semibold text-red-500">{t.keyword}</h3>
+                <p className="text-gray-600 text-xs">{t.repositories.length} repos · {t.trending_since || 'recent'}</p>
               </div>
-            )
-          })}
-        </div>
-      )}
+              <div className="flex gap-2 text-xs flex-wrap">
+                {t.tags?.slice(0, 3).map((tag: string) => (
+                  <span key={tag} className="bg-orange-900/30 text-orange-500/80 px-2 py-0.5 rounded-full border border-orange-800/30">{tag}</span>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              {t.repositories.slice(0, 5).map((repo: any, j: number) => (
+                <a
+                  key={repo.id}
+                  href={repo.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between bg-black/30 hover:bg-black/50 rounded-lg px-3 py-2 border border-gray-800/30 hover:border-gray-700/50 transition-all group"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-gray-600 text-xs font-mono w-4 shrink-0">{j + 1}</span>
+                    <span className="text-orange-500 text-xs sm:text-sm truncate">{repo.full_name}</span>
+                  </div>
+                  <div className="flex items-center gap-2 sm:gap-3 text-xs shrink-0">
+                    <LangDot lang={repo.language} />
+                    <span className="text-red-500 font-medium">⭐ {repo.stars}</span>
+                    <svg className="w-3 h-3 text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
