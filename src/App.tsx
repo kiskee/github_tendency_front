@@ -40,7 +40,7 @@ function App() {
         </div>
       </nav>
 
-      <main className="p-4 sm:p-6 max-w-6xl mx-auto w-full">
+      <main className="p-4 sm:p-6 max-w-7xl mx-auto w-full">
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/search" element={<Search />} />

@@ -4,6 +4,7 @@ import { getTrendsStats, getTrends } from '../api/trends'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { CardSkeleton } from '../components/Skeleton'
 import CountUp from '../components/CountUp'
+import ReportSidebar from '../components/ReportSidebar'
 
 const PIE_COLORS = ['#f97316', '#ef4444', '#dc2626', '#ea580c', '#c2410c', '#b91c1c', '#9a3412', '#7f1d1d']
 const CARD_BG = 'bg-black/40 backdrop-blur-2xl rounded-2xl border border-white/[0.06] hover:border-orange-500/20 transition-all duration-500 group'
@@ -95,7 +96,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-10 pb-8">
+    <div className="space-y-6 pb-8">
       <div className="flex items-center gap-4">
         <div className="h-8 w-1 bg-gradient-to-b from-orange-500 to-red-600 rounded-full" />
         <div>
@@ -104,183 +105,191 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-        {cards.map((c, i) => (
-          <div key={c.key} className={`${CARD_BG} animate-fade-up stagger-${i} relative overflow-hidden`}>
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <div className="relative p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500/70 group-hover:bg-orange-500/20 group-hover:border-orange-500/30 transition-all duration-300">
-                  {statIcons[c.key]}
-                </div>
-                <span className="text-gray-600 text-[11px] font-medium uppercase tracking-[0.12em]">{c.label}</span>
-              </div>
-              <p className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                {typeof c.value === 'number' ? <CountUp value={c.value} /> : c.value}
-              </p>
-              <p className="text-gray-700 text-xs mt-1.5 group-hover:text-gray-500 transition-colors duration-300">{c.detail}</p>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-orange-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <div className={`${CARD_BG} lg:col-span-3 animate-fade-up stagger-5 overflow-hidden`}>
-          <div className="p-5 sm:p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-1 h-5 bg-gradient-to-b from-orange-500 to-red-600 rounded-full" />
-              <h3 className="text-base font-semibold text-white/90">Stars per Keyword</h3>
-              <span className="text-gray-700 text-xs ml-auto">{starsPerKeyword.length} keywords</span>
-            </div>
-            <div className="w-full" style={{ aspectRatio: '21 / 9', minHeight: 260 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={starsPerKeyword} margin={{ left: -15, right: 10, top: 5, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#f97316" />
-                      <stop offset="50%" stopColor="#ef4444" />
-                      <stop offset="100%" stopColor="#dc2626" />
-                    </linearGradient>
-                  </defs>
-                  <XAxis
-                    dataKey="keyword"
-                    tick={{ fill: '#6b7280', fontSize: 11, fontWeight: 500 }}
-                    axisLine={{ stroke: '#1f2937', strokeWidth: 1 }}
-                    tickLine={false}
-                    interval="preserveStartEnd"
-                  />
-                  <YAxis
-                    tick={{ fill: '#6b7280', fontSize: 11 }}
-                    axisLine={{ stroke: '#1f2937', strokeWidth: 1 }}
-                    tickLine={false}
-                    width={40}
-                  />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                  <Bar dataKey="stars" fill="url(#barGradient)" radius={[6, 6, 0, 0]} maxBarSize={48} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[300px_1fr] gap-6 items-start">
+        <div className="lg:sticky lg:top-24 lg:self-start min-w-0">
+          <ReportSidebar />
         </div>
 
-        {langData.length > 0 && (
-          <div className={`${CARD_BG} lg:col-span-2 animate-fade-up stagger-6`}>
+        <div className="space-y-10 min-w-0">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          {cards.map((c, i) => (
+            <div key={c.key} className={`${CARD_BG} animate-fade-up stagger-${i} relative overflow-hidden`}>
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500/70 group-hover:bg-orange-500/20 group-hover:border-orange-500/30 transition-all duration-300">
+                    {statIcons[c.key]}
+                  </div>
+                  <span className="text-gray-600 text-[11px] font-medium uppercase tracking-[0.12em]">{c.label}</span>
+                </div>
+                <p className={`font-bold text-white tracking-tight ${c.key === 'Top Lang' ? 'text-base sm:text-lg lg:text-xl break-words' : 'text-xl sm:text-2xl lg:text-3xl truncate'}`}>
+                  {typeof c.value === 'number' ? <CountUp value={c.value} /> : c.value}
+                </p>
+                <p className="text-gray-700 text-xs mt-1.5 group-hover:text-gray-500 transition-colors duration-300">{c.detail}</p>
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-orange-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className={`${CARD_BG} lg:col-span-3 animate-fade-up stagger-5 overflow-hidden`}>
             <div className="p-5 sm:p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-1 h-5 bg-gradient-to-b from-orange-500 to-red-600 rounded-full" />
-                <h3 className="text-base font-semibold text-white/90">Languages</h3>
+                <h3 className="text-base font-semibold text-white/90">Stars per Keyword</h3>
+                <span className="text-gray-700 text-xs ml-auto">{starsPerKeyword.length} keywords</span>
               </div>
-              <div className="flex flex-col items-center gap-5">
-                <div className="w-full max-w-[200px]" style={{ aspectRatio: '1 / 1' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <defs>
-                        {PIE_COLORS.map((_color, i) => (
-                          <filter key={i} id={`glow-${i}`}>
-                            <feGaussianBlur stdDeviation="2" result="blur" />
-                            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                          </filter>
-                        ))}
-                      </defs>
-                      <Pie
-                        data={langData}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius="85%"
-                        innerRadius="45%"
-                        paddingAngle={3}
-                        strokeWidth={0}
-                      >
-                        {langData.map((_, i) => (
-                          <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} filter={`url(#glow-${i})`} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{ background: '#000000cc', backdropFilter: 'blur(12px)', border: '1px solid rgba(234,88,12,0.3)', borderRadius: 12, color: '#f3f4f6', fontSize: 13 }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+              <div className="w-full" style={{ aspectRatio: '21 / 9', minHeight: 260 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={starsPerKeyword} margin={{ left: -15, right: 10, top: 5, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#f97316" />
+                        <stop offset="50%" stopColor="#ef4444" />
+                        <stop offset="100%" stopColor="#dc2626" />
+                      </linearGradient>
+                    </defs>
+                    <XAxis
+                      dataKey="keyword"
+                      tick={{ fill: '#6b7280', fontSize: 11, fontWeight: 500 }}
+                      axisLine={{ stroke: '#1f2937', strokeWidth: 1 }}
+                      tickLine={false}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis
+                      tick={{ fill: '#6b7280', fontSize: 11 }}
+                      axisLine={{ stroke: '#1f2937', strokeWidth: 1 }}
+                      tickLine={false}
+                      width={40}
+                    />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                    <Bar dataKey="stars" fill="url(#barGradient)" radius={[6, 6, 0, 0]} maxBarSize={48} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {langData.length > 0 && (
+            <div className={`${CARD_BG} lg:col-span-2 animate-fade-up stagger-6`}>
+              <div className="p-5 sm:p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-1 h-5 bg-gradient-to-b from-orange-500 to-red-600 rounded-full" />
+                  <h3 className="text-base font-semibold text-white/90">Languages</h3>
                 </div>
-                <div className="w-full space-y-2">
-                  {langData.map((l, i) => (
-                    <div key={l.name} className="flex items-center gap-3 py-1.5 px-3 rounded-lg hover:bg-white/[0.03] transition-colors">
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-black" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
-                      <span className="text-gray-400 text-sm flex-1">{l.name}</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-16 sm:w-20 h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-700"
-                            style={{ width: `${(l.value / langData[0].value) * 100}%`, backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}
-                          />
+                <div className="flex flex-col items-center gap-5">
+                  <div className="w-full max-w-[200px]" style={{ aspectRatio: '1 / 1' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <defs>
+                          {PIE_COLORS.map((_color, i) => (
+                            <filter key={i} id={`glow-${i}`}>
+                              <feGaussianBlur stdDeviation="2" result="blur" />
+                              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                            </filter>
+                          ))}
+                        </defs>
+                        <Pie
+                          data={langData}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          outerRadius="85%"
+                          innerRadius="45%"
+                          paddingAngle={3}
+                          strokeWidth={0}
+                        >
+                          {langData.map((_, i) => (
+                            <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} filter={`url(#glow-${i})`} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{ background: '#000000cc', backdropFilter: 'blur(12px)', border: '1px solid rgba(234,88,12,0.3)', borderRadius: 12, color: '#f3f4f6', fontSize: 13 }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="w-full space-y-2">
+                    {langData.map((l, i) => (
+                      <div key={l.name} className="flex items-center gap-3 py-1.5 px-3 rounded-lg hover:bg-white/[0.03] transition-colors">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-black" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+                        <span className="text-gray-400 text-sm flex-1">{l.name}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 sm:w-20 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-700"
+                              style={{ width: `${(l.value / langData[0].value) * 100}%`, backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}
+                            />
+                          </div>
+                          <span className="text-gray-500 text-xs font-mono w-6 text-right">{l.value}</span>
                         </div>
-                        <span className="text-gray-500 text-xs font-mono w-6 text-right">{l.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {topRepos.length > 0 && (
+          <div className={`${CARD_BG} animate-fade-up stagger-7`}>
+            <div className="p-5 sm:p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-1 h-5 bg-gradient-to-b from-orange-500 to-red-600 rounded-full" />
+                <h3 className="text-base font-semibold text-white/90">Top Repositories</h3>
+                <span className="text-gray-700 text-xs ml-auto">by stars</span>
+              </div>
+              <div className="space-y-1.5">
+                {topRepos.map((repo, i) => (
+                  <div
+                    key={repo.id}
+                    className="group flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/[0.03] transition-all duration-200 cursor-default"
+                  >
+                    <div className={`
+                      w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0
+                      ${i < 3
+                        ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 text-orange-500'
+                        : 'bg-white/[0.04] border border-white/[0.06] text-gray-600'
+                      }
+                    `}>
+                      {i + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <a
+                        href={repo.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-orange-400/90 hover:text-orange-400 text-sm font-medium truncate block transition-colors"
+                      >
+                        {repo.full_name}
+                      </a>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <span className="text-gray-700 text-xs">{repo.keyword}</span>
+                        {repo.language && (
+                          <span className="text-gray-700 text-xs">· {repo.language}</span>
+                        )}
                       </div>
                     </div>
-                  ))}
-                </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="flex items-center gap-1.5 text-red-500/90 text-sm font-semibold">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>
+                        {repo.stars.toLocaleString()}
+                      </span>
+                      <svg className="w-4 h-4 text-gray-700 opacity-0 group-hover:opacity-100 transition-all duration-200 -translate-x-1 group-hover:translate-x-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                      </svg>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         )}
       </div>
-
-      {topRepos.length > 0 && (
-        <div className={`${CARD_BG} animate-fade-up stagger-7`}>
-          <div className="p-5 sm:p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-1 h-5 bg-gradient-to-b from-orange-500 to-red-600 rounded-full" />
-              <h3 className="text-base font-semibold text-white/90">Top Repositories</h3>
-              <span className="text-gray-700 text-xs ml-auto">by stars</span>
-            </div>
-            <div className="space-y-1.5">
-              {topRepos.map((repo, i) => (
-                <div
-                  key={repo.id}
-                  className="group flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/[0.03] transition-all duration-200 cursor-default"
-                >
-                  <div className={`
-                    w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0
-                    ${i < 3
-                      ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 text-orange-500'
-                      : 'bg-white/[0.04] border border-white/[0.06] text-gray-600'
-                    }
-                  `}>
-                    {i + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <a
-                      href={repo.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-orange-400/90 hover:text-orange-400 text-sm font-medium truncate block transition-colors"
-                    >
-                      {repo.full_name}
-                    </a>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-gray-700 text-xs">{repo.keyword}</span>
-                      {repo.language && (
-                        <span className="text-gray-700 text-xs">· {repo.language}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="flex items-center gap-1.5 text-red-500/90 text-sm font-semibold">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>
-                      {repo.stars.toLocaleString()}
-                    </span>
-                    <svg className="w-4 h-4 text-gray-700 opacity-0 group-hover:opacity-100 transition-all duration-200 -translate-x-1 group-hover:translate-x-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                    </svg>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   )
 }
