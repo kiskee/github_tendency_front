@@ -50,68 +50,72 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <h2 className="text-3xl font-bold text-orange-500">Dashboard</h2>
+      <h2 className="text-2xl sm:text-3xl font-bold text-orange-500">Dashboard</h2>
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         {cards.map(c => (
           <div key={c.label} className={hoverClass}>
             <p className="text-gray-500 text-xs tracking-wide uppercase">{c.label}</p>
-            <p className="text-2xl font-bold mt-1 text-red-500">{c.value}</p>
+            <p className="text-xl sm:text-2xl font-bold mt-1 text-red-500">{c.value}</p>
           </div>
         ))}
       </div>
 
       {starsPerKeyword.length > 0 && (
         <div className={hoverClass}>
-          <h3 className="text-lg font-semibold text-orange-500 mb-4">Stars per Keyword</h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={starsPerKeyword}>
-              <XAxis dataKey="keyword" tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={{ stroke: '#374151' }} tickLine={false} />
-              <YAxis tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={{ stroke: '#374151' }} tickLine={false} />
-              <Tooltip
-                contentStyle={{ background: '#111', border: '1px solid #7c2d12', borderRadius: 8, color: '#f3f4f6' }}
-                labelFormatter={(_, p) => p[0]?.payload?.raw || ''}
-              />
-              <Bar dataKey="stars" fill="#f97316" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <h3 className="text-base sm:text-lg font-semibold text-orange-500 mb-4">Stars per Keyword</h3>
+          <div className="w-full" style={{ aspectRatio: '16 / 9', maxHeight: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={starsPerKeyword} margin={{ left: -20, right: 10 }}>
+                <XAxis dataKey="keyword" tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={{ stroke: '#374151' }} tickLine={false} interval="preserveStartEnd" />
+                <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={{ stroke: '#374151' }} tickLine={false} width={40} />
+                <Tooltip
+                  contentStyle={{ background: '#111', border: '1px solid #7c2d12', borderRadius: 8, color: '#f3f4f6', fontSize: 12 }}
+                  labelFormatter={(_, p) => p[0]?.payload?.raw || ''}
+                />
+                <Bar dataKey="stars" fill="#f97316" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {langData.length > 0 && (
           <div className={hoverClass}>
-            <h3 className="text-lg font-semibold text-orange-500 mb-4">Languages</h3>
-            <ResponsiveContainer width="100%" height={240}>
-              <PieChart>
-                <Pie data={langData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, percent = 0 }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                  {langData.map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ background: '#111', border: '1px solid #7c2d12', borderRadius: 8, color: '#f3f4f6' }} />
-              </PieChart>
-            </ResponsiveContainer>
+            <h3 className="text-base sm:text-lg font-semibold text-orange-500 mb-4">Languages</h3>
+            <div className="w-full" style={{ aspectRatio: '4 / 3', maxHeight: 280 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={langData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius="70%" label={({ name, percent = 0 }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                    {langData.map((_, i) => (
+                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ background: '#111', border: '1px solid #7c2d12', borderRadius: 8, color: '#f3f4f6' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
 
         {topRepos.length > 0 && (
           <div className={hoverClass}>
-            <h3 className="text-lg font-semibold text-orange-500 mb-4">Top Repositories</h3>
-            <div className="space-y-3">
+            <h3 className="text-base sm:text-lg font-semibold text-orange-500 mb-4">Top Repositories</h3>
+            <div className="space-y-2 sm:space-y-3">
               {topRepos.map((repo, i) => (
-                <div key={repo.id} className="flex items-center justify-between bg-black/30 rounded-lg px-4 py-3 border border-gray-800/30">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-gray-600 text-sm font-mono w-5">{i + 1}</span>
+                <div key={repo.id} className="flex items-center justify-between bg-black/30 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-800/30">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <span className="text-gray-600 text-xs sm:text-sm font-mono w-4 sm:w-5 shrink-0">{i + 1}</span>
                     <div className="min-w-0">
-                      <a href={repo.url} target="_blank" className="text-orange-500 hover:underline text-sm font-medium truncate block">
+                      <a href={repo.url} target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:underline text-xs sm:text-sm font-medium truncate block">
                         {repo.full_name}
                       </a>
                       <span className="text-gray-600 text-xs">{repo.keyword}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 text-sm shrink-0">
-                    <span className="text-gray-500">{repo.language}</span>
+                  <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm shrink-0">
+                    <span className="text-gray-500 hidden sm:inline">{repo.language}</span>
                     <span className="text-red-500 font-medium">⭐ {repo.stars}</span>
                   </div>
                 </div>

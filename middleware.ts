@@ -1,10 +1,11 @@
 export const config = {
-  matcher: ['/health', '/search/:path*', '/trends/:path*'],
+  matcher: ['/api/:path*'],
 }
 
 export default async function middleware(request: Request): Promise<Response> {
   const url = new URL(request.url)
-  const target = `https://prologue-vintage-cheesy.ngrok-free.dev${url.pathname}${url.search}`
+  const apiPath = url.pathname.replace(/^\/api/, '') + url.search
+  const target = `https://prologue-vintage-cheesy.ngrok-free.dev${apiPath}`
 
   const headers = new Headers(request.headers)
   headers.set('x-api-key', process.env.API_KEY || '')
