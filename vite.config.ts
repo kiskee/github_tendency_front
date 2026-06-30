@@ -14,9 +14,7 @@ export default defineConfig(({ mode }) => {
     ],
     server: {
       proxy: {
-        '/health': { target: 'https://prologue-vintage-cheesy.ngrok-free.dev', changeOrigin: true, headers: { 'User-Agent': 'Vite-Dev-Proxy/1.0', 'x-api-key': env.VITE_API_KEY } },
-        '/search': { target: 'https://prologue-vintage-cheesy.ngrok-free.dev', changeOrigin: true, headers: { 'User-Agent': 'Vite-Dev-Proxy/1.0', 'x-api-key': env.VITE_API_KEY }, bypass: (req) => req.headers.accept?.includes('text/html') ? '/index.html' : undefined },
-        '/trends': { target: 'https://prologue-vintage-cheesy.ngrok-free.dev', changeOrigin: true, headers: { 'User-Agent': 'Vite-Dev-Proxy/1.0', 'x-api-key': env.VITE_API_KEY }, bypass: (req) => req.headers.accept?.includes('text/html') ? '/index.html' : undefined },
+        '/api': { target: 'https://prologue-vintage-cheesy.ngrok-free.dev', changeOrigin: true, rewrite: (path) => path.replace(/^\/api/, ''), headers: { 'User-Agent': 'Vite-Dev-Proxy/1.0', 'x-api-key': env.VITE_API_KEY } },
       },
     },
   }
