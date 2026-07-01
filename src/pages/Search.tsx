@@ -86,6 +86,8 @@ export default function Search() {
           <div className="grid gap-4">
             {data.repositories.map((repo) => {
             const langColor = LANG_COLORS[repo.language] || '#6b7280'
+            const langs = repo.languages ?? []
+            const totalBytes = langs.reduce((s, l) => s + l.size, 0)
             return (
               <div key={repo.githubId} className="bg-black/40 backdrop-blur-2xl rounded-2xl p-4 sm:p-5 border border-white/[0.06] hover:border-orange-500/20 transition-all duration-300 hover:shadow-lg hover:shadow-orange-600/15 animate-fade-up">
                 <div className="flex items-start justify-between gap-3">
@@ -99,20 +101,65 @@ export default function Search() {
                     <a href={repo.url} target="_blank" rel="noopener noreferrer" className="text-orange-500 font-medium hover:underline text-base sm:text-lg truncate block min-w-0">
                       {repo.fullName}
                     </a>
+                    {repo.isArchived && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-700/60 text-gray-400 font-medium shrink-0">archived</span>
+                    )}
                   </div>
-                  <svg className="w-4 h-4 text-gray-600 shrink-0 mt-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
+                  <a href={repo.url} target="_blank" rel="noopener noreferrer" className="shrink-0 mt-2">
+                    <svg className="w-4 h-4 text-gray-600 hover:text-orange-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
                 </div>
                 <p className="text-gray-400 text-sm mt-2 leading-relaxed line-clamp-2 sm:line-clamp-none">{repo.description}</p>
+
+                {(repo.topics ?? []).length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {(repo.topics ?? []).slice(0, 8).map(t => (
+                      <button key={t} onClick={() => { setKeyword(t); setSearchTerm(t) }} className="text-[11px] px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400/80 border border-orange-500/15 hover:bg-orange-500/20 hover:text-orange-300 transition-all cursor-pointer">{t}</button>
+                    ))}
+                  </div>
+                )}
+
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm text-gray-500">
                   <span className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: langColor }} />
                     <span className="text-orange-400/70">{repo.language}</span>
                   </span>
-                  <span className="text-red-500 font-medium">⭐ {repo.stars.toLocaleString()}</span>
-                  <span>⑂ {repo.forks.toLocaleString()}</span>
+                  <span title="Stars" className="text-red-500 font-medium">⭐ {repo.stars.toLocaleString()}</span>
+                  <span title="Forks">⑂ {repo.forks.toLocaleString()} forks</span>
+                  <span title="Watchers">👁 {repo.watchers.toLocaleString()} watchers</span>
+                  <span title="Open issues">!{repo.openIssues.toLocaleString()} issues</span>
+                  {repo.license && <span title="License" className="text-[11px] text-gray-600">⚖ {repo.license}</span>}
+                  {!repo.license && <span className="text-[11px] text-gray-600">⚖ No license</span>}
                 </div>
+
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-gray-600">
+                  {repo.homepageUrl && (
+                    <a href={repo.homepageUrl} target="_blank" rel="noopener noreferrer" className="hover:text-orange-400 transition-colors truncate max-w-[240px]" title="Homepage">
+                      🌐 {repo.homepageUrl}
+                    </a>
+                  )}
+                  {repo.latestRelease && (
+                    <span title="Latest release">🏷 {repo.latestRelease}</span>
+                  )}
+                  <span title="Created">📦 {new Date(repo.createdAt).toLocaleDateString()}</span>
+                  <span title="Last push">📅 {new Date(repo.lastPush).toLocaleDateString()}</span>
+                </div>
+
+                {langs.length > 1 && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-[11px] text-gray-500 shrink-0">Lang:</span>
+                    <div className="flex h-1.5 rounded-full overflow-hidden flex-1 max-w-[240px] bg-gray-800/60">
+                      {langs.slice(0, 5).map(l => {
+                        const pct = totalBytes > 0 ? (l.size / totalBytes) * 100 : 0
+                        if (pct < 1) return null
+                        return <div key={l.name} style={{ width: `${pct}%`, backgroundColor: LANG_COLORS[l.name] || '#6b7280' }} title={`${l.name}: ${pct.toFixed(1)}%`} />
+                      })}
+                    </div>
+                    <span className="text-[11px] text-gray-600" title="Repository size">{repo.diskUsage ? (repo.diskUsage > 1024 ? `${(repo.diskUsage / 1024).toFixed(1)} MB` : `${repo.diskUsage} KB`) : '-'}</span>
+                  </div>
+                )}
               </div>
             )
             })}

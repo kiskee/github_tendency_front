@@ -1,13 +1,29 @@
 import { request } from './client'
 
+export interface TrendLanguageEntry {
+  name: string
+  size: number
+}
+
 export interface TrendRepo {
   id: number
   full_name: string
   owner: string
   stars: number
   forks: number
+  watchers: number
+  open_issues: number
   language: string
+  languages: TrendLanguageEntry[]
+  license: string | null
+  latest_release: string | null
+  topics: string[]
+  homepage_url: string | null
+  is_archived: boolean
+  disk_usage: number
   description: string
+  created_at: string
+  last_push: string
   url: string
 }
 

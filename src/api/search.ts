@@ -1,5 +1,10 @@
 import { request } from './client'
 
+export interface LanguageEntry {
+  name: string
+  size: number
+}
+
 export interface GitHubRepo {
   githubId: number
   name: string
@@ -8,7 +13,16 @@ export interface GitHubRepo {
   url: string
   stars: number
   forks: number
+  watchers: number
+  openIssues: number
   language: string
+  languages: LanguageEntry[]
+  license: string | null
+  latestRelease: string | null
+  topics: string[]
+  homepageUrl: string | null
+  isArchived: boolean
+  diskUsage: number
   description: string
   createdAt: string
   lastPush: string

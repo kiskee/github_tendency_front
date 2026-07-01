@@ -120,32 +120,81 @@ export default function Trends() {
                 ))}
               </div>
             </div>
-            <div className="space-y-1.5">
-              {t.repositories.slice(0, 5).map((repo: TrendRepo, j: number) => (
-                <a
-                  key={repo.id}
-                  href={repo.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 bg-black/30 hover:bg-black/50 rounded-lg px-3 py-2 border border-gray-800/30 hover:border-gray-700/50 transition-all group"
-                >
-                  <img
-                    src={`https://avatars.githubusercontent.com/${repo.owner}?size=20`}
-                    alt=""
-                    className="w-4 h-4 rounded-full shrink-0 ring-1 ring-white/10"
-                    loading="lazy"
-                  />
-                  <span className="text-gray-600 text-[10px] font-mono w-3 shrink-0">{j + 1}</span>
-                  <span className="text-orange-500 text-xs sm:text-sm truncate flex-1">{repo.full_name}</span>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="hidden sm:block w-12 h-1 bg-gray-800 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full bg-gradient-to-r from-orange-500 to-red-500 transition-all" style={{ width: `${(repo.stars / maxStars) * 100}%` }} />
-                    </div>
-                    <LangDot lang={repo.language} />
-                    <span className="text-red-500 font-medium text-xs">⭐ {repo.stars}</span>
-                  </div>
-                </a>
+            <div className="space-y-2">
+              {t.repositories.slice(0, 5).map((repo: TrendRepo, j: number) => {
+                const langs = repo.languages ?? []
+                const topics = repo.topics ?? []
+              return (
+                <div key={repo.id} className="bg-black/30 hover:bg-black/50 rounded-lg px-3 py-2.5 border border-gray-800/30 hover:border-gray-700/50 transition-all group">
+                  <div className="flex items-start gap-2">
+                    <img
+                      src={`https://avatars.githubusercontent.com/${repo.owner}?size=20`}
+                      alt=""
+                      className="w-4 h-4 rounded-full shrink-0 ring-1 ring-white/10 mt-0.5"
+                      loading="lazy"
+                    />
+                    <span className="text-gray-600 text-[10px] font-mono w-3 shrink-0 mt-0.5">{j + 1}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <a href={repo.url} target="_blank" rel="noopener noreferrer" className="text-orange-500 text-xs sm:text-sm font-medium hover:underline truncate">
+                          {repo.full_name}
+                        </a>
+                        {repo.is_archived && (
+                          <span className="text-[9px] px-1 py-0.5 rounded bg-gray-700/60 text-gray-400 shrink-0">archived</span>
+                        )}
+                        {repo.latest_release && (
+                          <span className="text-[9px] text-gray-600 shrink-0">🏷 {repo.latest_release}</span>
+                        )}
+                        {repo.homepage_url && (
+                          <a href={repo.homepage_url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-gray-600 hover:text-orange-400 truncate max-w-[120px]">🌐</a>
+                        )}
+                      </div>
+                      {topics.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {topics.slice(0, 4).map(t => (
+                            <span key={t} className="text-[9px] px-1.5 py-0.5 rounded-full bg-orange-500/10 text-orange-400/70 border border-orange-500/15">{t}</span>
               ))}
+                        </div>
+                      )}
+                      <p className="text-gray-500 text-[11px] mt-1 leading-relaxed line-clamp-1">{repo.description}</p>
+                      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 mt-1.5 text-[11px] text-gray-500">
+                        <LangDot lang={repo.language} />
+                        <span className="text-red-500 font-medium">⭐ {repo.stars.toLocaleString()}</span>
+                        <span>⑂ {repo.forks.toLocaleString()} forks</span>
+                        {repo.watchers != null && <span>👁 {repo.watchers.toLocaleString()} watchers</span>}
+                        {repo.open_issues != null && <span>!{repo.open_issues.toLocaleString()} issues</span>}
+                        {repo.license && <span className="text-gray-600">⚖ {repo.license}</span>}
+                        {!repo.license && <span className="text-gray-600">⚖ No license</span>}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-2.5 mt-1 text-[10px] text-gray-600">
+                        <span title="Created">📦 {repo.created_at ? new Date(repo.created_at).toLocaleDateString() : '-'}</span>
+                        <span title="Last push">📅 {repo.last_push ? new Date(repo.last_push).toLocaleDateString() : '-'}</span>
+                      </div>
+                      {langs.length > 1 && (
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          <span className="text-[10px] text-gray-600 shrink-0">Lang:</span>
+                          <div className="flex h-1 rounded-full overflow-hidden flex-1 max-w-[160px] bg-gray-800/60">
+                            {(() => {
+                              const tb = langs.reduce((s, l) => s + l.size, 0)
+                              return langs.slice(0, 5).map(l => {
+                                const pct = tb > 0 ? (l.size / tb) * 100 : 0
+                                if (pct < 1) return null
+                                return <div key={l.name} style={{ width: `${pct}%`, backgroundColor: LANG_COLORS[l.name] || '#6b7280' }} title={`${l.name}: ${pct.toFixed(1)}%`} />
+                              })
+                            })()}
+                          </div>
+                          <span className="text-[10px] text-gray-600">{repo.disk_usage ? (repo.disk_usage > 1024 ? `${(repo.disk_usage / 1024).toFixed(1)} MB` : `${repo.disk_usage} KB`) : '-'}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="hidden sm:flex w-12 shrink-0 flex-col items-end gap-1 pt-1">
+                      <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-orange-500 to-red-500 transition-all" style={{ width: `${(repo.stars / maxStars) * 100}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )})}
             </div>
           </div>
         )
