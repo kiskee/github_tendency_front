@@ -5,7 +5,8 @@ export const config = {
 export default async function middleware(request: Request): Promise<Response> {
   const url = new URL(request.url)
   const apiPath = url.pathname.replace(/^\/api/, '')
-  const target = `https://prologue-vintage-cheesy.ngrok-free.dev${apiPath}${url.search}`
+  const baseUrl = process.env.API_BASE_URL || process.env.VITE_API_BASE_URL || ''
+  const target = `${baseUrl}${apiPath}${url.search}`
 
   const headers = new Headers(request.headers)
   headers.set('x-api-key', process.env.API_KEY || '')

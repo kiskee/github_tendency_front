@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
     ],
     server: {
       proxy: {
-        '/api': { target: 'https://prologue-vintage-cheesy.ngrok-free.dev', changeOrigin: true, rewrite: (path) => path.replace(/^\/api/, ''), headers: { 'User-Agent': 'Vite-Dev-Proxy/1.0', 'x-api-key': env.VITE_API_KEY } },
+        '/api': { target: env.VITE_API_BASE_URL, changeOrigin: true, rewrite: (path) => path.replace(/^\/api/, ''), headers: { 'User-Agent': 'Vite-Dev-Proxy/1.0', 'x-api-key': env.VITE_API_KEY } },
       },
     },
   }

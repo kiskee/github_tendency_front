@@ -10,6 +10,23 @@ import ReportSidebar from '../components/ReportSidebar'
 const PIE_COLORS = ['#f97316', '#ef4444', '#dc2626', '#ea580c', '#c2410c', '#b91c1c', '#9a3412', '#7f1d1d']
 const CARD_BG = 'bg-black/40 backdrop-blur-2xl rounded-2xl border border-white/[0.06] hover:border-orange-500/20 transition-all duration-500 group'
 
+interface TooltipPayloadItem {
+  value: number
+  payload: { raw?: string }
+}
+
+function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: TooltipPayloadItem[]; label?: string }) {
+  if (active && payload?.length) {
+    return (
+      <div className="bg-black/80 backdrop-blur-xl border border-orange-500/30 rounded-xl px-4 py-3 shadow-2xl shadow-orange-600/10">
+        <p className="text-white/90 text-sm font-medium">{payload[0].payload.raw || label}</p>
+        <p className="text-orange-500 text-lg font-bold">{payload[0].value.toLocaleString()} ⭐</p>
+      </div>
+    )
+  }
+  return null
+}
+
 export default function Dashboard() {
   const stats = useQuery({ queryKey: ['trends-stats'], queryFn: getTrendsStats })
   const trends = useQuery({ queryKey: ['trends-all'], queryFn: () => getTrends({ limit: 50 }) })
@@ -83,18 +100,6 @@ export default function Dashboard() {
     { key: 'Max Stars', label: 'Max Stars', value: Number(stats.data.max_stars), detail: `single repo` },
     { key: 'Top Lang', label: 'Top Lang', value: stats.data.top_language, detail: `${langData.find(l => l.name === stats.data.top_language)?.value || 0} repos` },
   ]
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload?.length) {
-      return (
-        <div className="bg-black/80 backdrop-blur-xl border border-orange-500/30 rounded-xl px-4 py-3 shadow-2xl shadow-orange-600/10">
-          <p className="text-white/90 text-sm font-medium">{payload[0].payload.raw || label}</p>
-          <p className="text-orange-500 text-lg font-bold">{payload[0].value.toLocaleString()} ⭐</p>
-        </div>
-      )
-    }
-    return null
-  }
 
   return (
     <div className="space-y-6 pb-8">
