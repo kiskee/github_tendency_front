@@ -42,7 +42,7 @@ function formatTime(iso: string) {
 }
 
 export default function ReportSidebar() {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['report'],
     queryFn: getReport,
     refetchInterval: 120_000,
@@ -54,7 +54,7 @@ export default function ReportSidebar() {
     <div className="bg-black/40 backdrop-blur-2xl rounded-2xl border border-white/[0.06] p-5 text-center">
       <p className="text-red-400/70 text-xs mb-3">Report unavailable</p>
       <button
-        onClick={() => window.location.reload()}
+        onClick={() => refetch()}
         className="text-xs text-orange-500 hover:text-orange-400 underline underline-offset-2"
       >
         Retry

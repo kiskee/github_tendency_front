@@ -1,7 +1,7 @@
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Helmet } from 'react-helmet-async'
-import { getTrendsStats, getTrends } from '../api/trends'
+import { getTrendsStats, getTrends, type TrendRepo } from '../api/trends'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { CardSkeleton } from '../components/Skeleton'
 import CountUp from '../components/CountUp'
@@ -62,25 +62,25 @@ export default function Dashboard() {
   const starsPerKeyword = trendsData
     .map(t => ({
       keyword: t.keyword.length > 10 ? t.keyword.slice(0, 10) + '…' : t.keyword,
-      stars: t.repositories.reduce((s: number, r: any) => s + (r.stars || 0), 0),
+      stars: t.repositories.reduce((s: number, r: TrendRepo) => s + (r.stars || 0), 0),
       raw: t.keyword,
     }))
     .sort((a, b) => b.stars - a.stars)
 
-  const langCount: Record<string, number> = {}
+  const langMap = new Map<string, number>()
   trendsData.forEach(t =>
-    t.repositories.forEach((r: any) => {
+    t.repositories.forEach((r: TrendRepo) => {
       const lang = r.language || 'Unknown'
-      langCount[lang] = (langCount[lang] || 0) + 1
+      langMap.set(lang, (langMap.get(lang) || 0) + 1)
     }),
   )
-  const langData = Object.entries(langCount)
+  const langData = [...langMap.entries()]
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 8)
 
   const topRepos = trendsData
-    .flatMap(t => t.repositories.map((r: any) => ({ ...r, keyword: t.keyword })))
+    .flatMap(t => t.repositories.map((r: TrendRepo) => ({ ...r, keyword: t.keyword })))
     .filter((r, i, arr) => arr.findIndex(x => x.id === r.id) === i)
     .sort((a, b) => b.stars - a.stars)
     .slice(0, 10)

@@ -1,12 +1,25 @@
 import { request } from './client'
 
+export interface TrendRepo {
+  id: number
+  full_name: string
+  owner: string
+  stars: number
+  forks: number
+  language: string
+  description: string
+  url: string
+}
+
 export interface TrendSearch {
   id: number
   keyword: string
   search_count: number
   last_searched_at: string
   created_at: string
-  repositories: any[]
+  repositories: TrendRepo[]
+  trending_since?: string
+  tags?: string[]
 }
 
 export interface TrendsResponse {

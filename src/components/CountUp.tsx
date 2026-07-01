@@ -6,7 +6,6 @@ export default function CountUp({ value, duration = 600 }: { value: number; dura
   const rafRef = useRef<number>(0)
 
   useEffect(() => {
-    if (value === 0) { setDisplay(0); return }
     startRef.current = null
     const step = (now: number) => {
       if (!startRef.current) startRef.current = now

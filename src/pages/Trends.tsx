@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Helmet } from 'react-helmet-async'
-import { getTrends } from '../api/trends'
+import { getTrends, type TrendSearch, type TrendRepo } from '../api/trends'
 import { TrendSkeleton } from '../components/Skeleton'
 
 const LANG_COLORS: Record<string, string> = {
@@ -65,7 +65,7 @@ export default function Trends() {
       </Helmet>
       <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-orange-500">Trends</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        {trends.map((t: any, i: number) => (
+        {trends.map((t: TrendSearch, i: number) => (
           <div key={t.id} className={`bg-gray-900/50 backdrop-blur-xl rounded-xl p-4 sm:p-5 border border-orange-900/30 hover:border-orange-700/60 transition-all duration-300 hover:shadow-lg hover:shadow-orange-600/15 animate-fade-up stagger-${Math.min(i, 8)}`}>
             <div className="flex flex-wrap items-start justify-between gap-2 mb-4">
               <div className="min-w-0">
@@ -79,7 +79,7 @@ export default function Trends() {
               </div>
             </div>
             <div className="space-y-1.5">
-              {t.repositories.slice(0, 5).map((repo: any, j: number) => (
+              {t.repositories.slice(0, 5).map((repo: TrendRepo, j: number) => (
                 <a
                   key={repo.id}
                   href={repo.url}
