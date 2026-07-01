@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Helmet } from 'react-helmet-async'
 import { getTrendsStats, getTrends, type TrendRepo } from '../api/trends'
@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { CardSkeleton } from '../components/Skeleton'
 import CountUp from '../components/CountUp'
 import ReportSidebar from '../components/ReportSidebar'
+import WelcomeModal from '../components/WelcomeModal'
 
 const PIE_COLORS = ['#f97316', '#ef4444', '#dc2626', '#ea580c', '#c2410c', '#b91c1c', '#9a3412', '#7f1d1d']
 const CARD_BG = 'bg-black/40 backdrop-blur-2xl rounded-2xl border border-white/[0.06] hover:border-orange-500/20 transition-all duration-500 group'
@@ -47,9 +48,42 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   return null
 }
 
+const WELCOME_KEY = 'github-tendency-welcome-dismissed-at'
+const WELCOME_INTERVAL_DAYS = 1
+
+function shouldShowWelcome(): boolean {
+  const last = localStorage.getItem(WELCOME_KEY)
+  if (!last) return true
+  const lastTime = parseInt(last, 10)
+  if (Number.isNaN(lastTime)) return true
+  const diffDays = (Date.now() - lastTime) / (1000 * 60 * 60 * 24)
+  return diffDays >= WELCOME_INTERVAL_DAYS
+}
+
 export default function Dashboard() {
   const stats = useQuery({ queryKey: ['trends-stats'], queryFn: getTrendsStats })
   const trends = useQuery({ queryKey: ['trends-all'], queryFn: () => getTrends({ limit: 50 }) })
+  const [showWelcome, setShowWelcome] = useState(false)
+
+  useEffect(() => {
+    if (shouldShowWelcome()) setShowWelcome(true)
+  }, [])
+
+  useEffect(() => {
+    if (showWelcome) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [showWelcome])
+
+  const dismissWelcome = () => {
+    localStorage.setItem(WELCOME_KEY, String(Date.now()))
+    setShowWelcome(false)
+  }
 
   if (stats.isLoading) return (
     <div className="space-y-8">
@@ -135,6 +169,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 pb-8">
+      {showWelcome && <WelcomeModal onDismiss={dismissWelcome} />}
       <Helmet>
         <title>Dashboard — GitHub Tendency</title>
         <meta property="og:title" content="Dashboard — GitHub Tendency" />
