@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Helmet } from 'react-helmet-async'
 import { getTrends, type TrendSearch, type TrendRepo } from '../api/trends'
@@ -32,11 +33,28 @@ function LangDot({ lang }: { lang: string | null }) {
   )
 }
 
+const TAG_COLORS: Record<string, string> = {
+  ai: '#8b5cf6', ml: '#8b5cf6', data: '#6366f1',
+  web: '#0ea5e9', frontend: '#0ea5e9', ui: '#06b6d4',
+  backend: '#10b981', api: '#10b981', devops: '#14b8a6',
+  tool: '#f59e0b', cli: '#f59e0b', database: '#84cc16',
+  default: '#f97316',
+}
+
+function tagColor(tag: string): string {
+  const lower = tag.toLowerCase()
+  for (const [key, color] of Object.entries(TAG_COLORS)) {
+    if (lower.includes(key)) return color
+  }
+  return TAG_COLORS.default
+}
+
 export default function Trends() {
   const { data, isLoading } = useQuery({
     queryKey: ['trends'],
     queryFn: () => getTrends({}),
   })
+  const [filter, setFilter] = useState('')
 
   if (isLoading) return (
     <div>
@@ -54,7 +72,9 @@ export default function Trends() {
     </div>
   )
 
-  const trends = data.data
+  const trends = data.data.filter(t =>
+    !filter || t.keyword.toLowerCase().includes(filter.toLowerCase())
+  )
 
   return (
     <div>
@@ -63,10 +83,32 @@ export default function Trends() {
         <meta property="og:title" content="Trends — GitHub Tendency" />
         <meta name="twitter:title" content="Trends — GitHub Tendency" />
       </Helmet>
-      <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-orange-500">Trends</h2>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <h2 className="text-2xl sm:text-3xl font-bold text-orange-500">Trends</h2>
+        <div className="relative w-full sm:w-64">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+          </svg>
+          <input
+            type="text"
+            value={filter}
+            onChange={e => setFilter(e.target.value)}
+            placeholder="Filter keywords..."
+            className="w-full bg-gray-900/60 backdrop-blur-sm border border-gray-800/50 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-orange-600/50 focus:ring-1 focus:ring-orange-600/20 transition-all"
+          />
+        </div>
+      </div>
+      <p className="text-gray-600 text-xs mb-4 -mt-3">{trends.length} of {data.data.length} keywords</p>
+      {trends.length === 0 ? (
+        <div className="text-center py-16">
+          <p className="text-gray-500">No trends match "{filter}"</p>
+        </div>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        {trends.map((t: TrendSearch, i: number) => (
-          <div key={t.id} className={`bg-gray-900/50 backdrop-blur-xl rounded-xl p-4 sm:p-5 border border-orange-900/30 hover:border-orange-700/60 transition-all duration-300 hover:shadow-lg hover:shadow-orange-600/15 animate-fade-up stagger-${Math.min(i, 8)}`}>
+        {trends.map((t: TrendSearch) => {
+        const maxStars = Math.max(...t.repositories.map(r => r.stars), 1)
+        return (
+          <div key={t.id} className="bg-black/40 backdrop-blur-2xl rounded-2xl p-4 sm:p-5 border border-white/[0.06] hover:border-orange-500/20 transition-all duration-300 animate-fade-up">
             <div className="flex flex-wrap items-start justify-between gap-2 mb-4">
               <div className="min-w-0">
                 <h3 className="text-base sm:text-lg font-semibold text-red-500">{t.keyword}</h3>
@@ -74,7 +116,7 @@ export default function Trends() {
               </div>
               <div className="flex gap-2 text-xs flex-wrap">
                 {t.tags?.slice(0, 3).map((tag: string) => (
-                  <span key={tag} className="bg-orange-900/30 text-orange-500/80 px-2 py-0.5 rounded-full border border-orange-800/30">{tag}</span>
+                  <span key={tag} className="px-2 py-0.5 rounded-full border" style={{ backgroundColor: `${tagColor(tag)}20`, color: tagColor(tag), borderColor: `${tagColor(tag)}40` }}>{tag}</span>
                 ))}
               </div>
             </div>
@@ -85,25 +127,31 @@ export default function Trends() {
                   href={repo.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between bg-black/30 hover:bg-black/50 rounded-lg px-3 py-2 border border-gray-800/30 hover:border-gray-700/50 transition-all group"
+                  className="flex items-center gap-2 bg-black/30 hover:bg-black/50 rounded-lg px-3 py-2 border border-gray-800/30 hover:border-gray-700/50 transition-all group"
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-gray-600 text-xs font-mono w-4 shrink-0">{j + 1}</span>
-                    <span className="text-orange-500 text-xs sm:text-sm truncate">{repo.full_name}</span>
-                  </div>
-                  <div className="flex items-center gap-2 sm:gap-3 text-xs shrink-0">
+                  <img
+                    src={`https://avatars.githubusercontent.com/${repo.owner}?size=20`}
+                    alt=""
+                    className="w-4 h-4 rounded-full shrink-0 ring-1 ring-white/10"
+                    loading="lazy"
+                  />
+                  <span className="text-gray-600 text-[10px] font-mono w-3 shrink-0">{j + 1}</span>
+                  <span className="text-orange-500 text-xs sm:text-sm truncate flex-1">{repo.full_name}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="hidden sm:block w-12 h-1 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-gradient-to-r from-orange-500 to-red-500 transition-all" style={{ width: `${(repo.stars / maxStars) * 100}%` }} />
+                    </div>
                     <LangDot lang={repo.language} />
-                    <span className="text-red-500 font-medium">⭐ {repo.stars}</span>
-                    <svg className="w-3 h-3 text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
+                    <span className="text-red-500 font-medium text-xs">⭐ {repo.stars}</span>
                   </div>
                 </a>
               ))}
             </div>
           </div>
-        ))}
+        )
+        })}
       </div>
+      )}
     </div>
   )
 }
