@@ -19,15 +19,28 @@ const LANG_COLORS: Record<string, string> = {
 
 interface TooltipPayloadItem {
   value: number
-  payload: { raw?: string }
+  payload: {
+    raw?: string
+    forks?: number
+    watchers?: number
+    repoCount?: number
+    avgStars?: number
+  }
 }
 
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: TooltipPayloadItem[]; label?: string }) {
   if (active && payload?.length) {
+    const p = payload[0].payload
     return (
-      <div className="bg-black/80 backdrop-blur-xl border border-orange-500/30 rounded-xl px-4 py-3 shadow-2xl shadow-orange-600/10">
-        <p className="text-white/90 text-sm font-medium">{payload[0].payload.raw || label}</p>
-        <p className="text-orange-500 text-lg font-bold">{payload[0].value.toLocaleString()} ⭐</p>
+      <div className="bg-black/80 backdrop-blur-xl border border-orange-500/30 rounded-xl px-4 py-3 shadow-2xl shadow-orange-600/10 space-y-1">
+        <p className="text-white/90 text-sm font-medium">{p.raw || label}</p>
+        <p className="text-orange-500 text-lg font-bold">{payload[0].value.toLocaleString()} ⭐ stars</p>
+        <div className="text-[11px] text-gray-400 space-y-0.5">
+          {p.repoCount != null && <p>📦 {p.repoCount} repos</p>}
+          {p.forks != null && <p>⑂ {p.forks.toLocaleString()} forks</p>}
+          {p.watchers != null && <p>👁 {p.watchers.toLocaleString()} watchers</p>}
+          {p.avgStars != null && <p>⭐ avg {p.avgStars.toLocaleString(undefined, { maximumFractionDigits: 0 })} / repo</p>}
+        </div>
       </div>
     )
   }
@@ -67,11 +80,19 @@ export default function Dashboard() {
   const trendsData = trends.data?.data || []
 
   const starsPerKeyword = trendsData
-    .map(t => ({
-      keyword: t.keyword.length > 10 ? t.keyword.slice(0, 10) + '…' : t.keyword,
-      stars: t.repositories.reduce((s: number, r: TrendRepo) => s + (r.stars || 0), 0),
-      raw: t.keyword,
-    }))
+    .map(t => {
+      const repos = t.repositories
+      const totalStars = repos.reduce((s: number, r: TrendRepo) => s + (r.stars || 0), 0)
+      return {
+        keyword: t.keyword.length > 10 ? t.keyword.slice(0, 10) + '…' : t.keyword,
+        stars: totalStars,
+        forks: repos.reduce((s: number, r: TrendRepo) => s + (r.forks || 0), 0),
+        watchers: repos.reduce((s: number, r: TrendRepo) => s + (r.watchers || 0), 0),
+        repoCount: repos.length,
+        avgStars: repos.length > 0 ? Math.round(totalStars / repos.length) : 0,
+        raw: t.keyword,
+      }
+    })
     .sort((a, b) => b.stars - a.stars)
 
   const langMap = new Map<string, number>()
@@ -185,9 +206,9 @@ export default function Dashboard() {
                 <h3 className="text-base font-semibold text-white/90">Stars per Keyword</h3>
                 <span className="text-gray-700 text-xs ml-auto">{starsPerKeyword.length} keywords</span>
               </div>
-              <div className="w-full" style={{ aspectRatio: '21 / 9', minHeight: 260 }}>
+              <div className="w-full" style={{ height: 260 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={starsPerKeyword} margin={{ left: -15, right: 10, top: 5, bottom: 0 }}>
+                  <BarChart data={starsPerKeyword} margin={{ left: 0, right: 10, top: 5, bottom: 0 }}>
                     <defs>
                       <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#f97316" />
@@ -197,22 +218,65 @@ export default function Dashboard() {
                     </defs>
                     <XAxis
                       dataKey="keyword"
-                      tick={{ fill: '#6b7280', fontSize: 11, fontWeight: 500 }}
+                      tick={{ fill: '#6b7280', fontSize: 12, fontWeight: 500 }}
                       axisLine={{ stroke: '#1f2937', strokeWidth: 1 }}
                       tickLine={false}
                       interval="preserveStartEnd"
                     />
                     <YAxis
-                      tick={{ fill: '#6b7280', fontSize: 11 }}
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
                       axisLine={{ stroke: '#1f2937', strokeWidth: 1 }}
                       tickLine={false}
-                      width={40}
+                      width={50}
                     />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                    <Bar dataKey="stars" fill="url(#barGradient)" radius={[6, 6, 0, 0]} maxBarSize={48} animationBegin={300} />
+                    <Bar dataKey="stars" fill="url(#barGradient)" radius={[6, 6, 0, 0]} animationBegin={300} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+              {starsPerKeyword.length > 0 && (() => {
+                const totalStars = starsPerKeyword.reduce((s, k) => s + k.stars, 0)
+                const top = starsPerKeyword[0]
+                const avg = Math.round(totalStars / starsPerKeyword.length)
+                const mostRepos = [...starsPerKeyword].sort((a, b) => (b.repoCount ?? 0) - (a.repoCount ?? 0))[0]
+                const topLegend = starsPerKeyword.slice(0, 5)
+                return (
+                  <div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
+                    <div className="bg-white/[0.03] rounded-xl p-3">
+                      <p className="text-gray-600 text-[10px] uppercase tracking-wider">Top keyword</p>
+                      <p className="text-orange-400 text-sm font-semibold truncate mt-0.5" title={top.raw}>{top.raw}</p>
+                      <p className="text-gray-500 text-[11px] mt-0.5">{top.stars.toLocaleString()} ⭐</p>
+                    </div>
+                    <div className="bg-white/[0.03] rounded-xl p-3">
+                      <p className="text-gray-600 text-[10px] uppercase tracking-wider">Avg stars</p>
+                      <p className="text-white text-sm font-semibold mt-0.5">{avg.toLocaleString()} ⭐</p>
+                      <p className="text-gray-500 text-[11px] mt-0.5">per keyword</p>
+                    </div>
+                    <div className="bg-white/[0.03] rounded-xl p-3">
+                      <p className="text-gray-600 text-[10px] uppercase tracking-wider">Total stars</p>
+                      <p className="text-white text-sm font-semibold mt-0.5">{totalStars.toLocaleString()} ⭐</p>
+                      <p className="text-gray-500 text-[11px] mt-0.5">across {starsPerKeyword.length} keywords</p>
+                    </div>
+                    <div className="bg-white/[0.03] rounded-xl p-3">
+                      <p className="text-gray-600 text-[10px] uppercase tracking-wider">Most repos</p>
+                      <p className="text-orange-400 text-sm font-semibold truncate mt-0.5" title={mostRepos.raw}>{mostRepos.raw}</p>
+                      <p className="text-gray-500 text-[11px] mt-0.5">{mostRepos.repoCount ?? 0} repos</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4 pt-4 border-t border-white/[0.06] text-[11px] text-gray-500">
+                    <span className="text-gray-600 text-[10px] uppercase tracking-wider mr-1">Top keywords</span>
+                    {topLegend.map((k, i) => (
+                      <span key={k.raw} className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: i === 0 ? '#f97316' : i === 1 ? '#ef4444' : i === 2 ? '#dc2626' : '#6b7280' }} />
+                        <span className="text-gray-400">{k.raw}</span>
+                        <span className="text-gray-600">{k.stars.toLocaleString()} ⭐</span>
+                      </span>
+                    ))}
+                  </div>
+                  </div>
+                )
+              })()}
             </div>
           </div>
 
