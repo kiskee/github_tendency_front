@@ -125,7 +125,7 @@ export default function Trends() {
                 const langs = repo.languages ?? []
                 const topics = repo.topics ?? []
               return (
-                <div key={repo.id} className="bg-black/30 hover:bg-black/50 rounded-lg px-3 py-2.5 border border-gray-800/30 hover:border-gray-700/50 transition-all group">
+                <div key={repo.id ?? repo.github_id} className="bg-black/30 hover:bg-black/50 rounded-lg px-3 py-2.5 border border-gray-800/30 hover:border-gray-700/50 transition-all group">
                   <div className="flex items-start gap-2">
                     <img
                       src={`https://avatars.githubusercontent.com/${repo.owner}?size=20`}

@@ -88,7 +88,11 @@ export default function Dashboard() {
 
   const topRepos = trendsData
     .flatMap(t => t.repositories.map((r: TrendRepo) => ({ ...r, keyword: t.keyword })))
-    .filter((r, i, arr) => arr.findIndex(x => x.id === r.id) === i)
+    .filter((r, i, arr) => {
+      const rid = r.id ?? r.github_id
+      if (rid == null) return true
+      return arr.findIndex(x => (x.id ?? x.github_id) === rid) === i
+    })
     .sort((a, b) => b.stars - a.stars)
     .slice(0, 10)
 
@@ -292,48 +296,78 @@ export default function Dashboard() {
                   const langColor = LANG_COLORS[repo.language] || '#6b7280'
                   return (
                   <div
-                    key={repo.id}
-                    className="group flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/[0.03] transition-all duration-200 cursor-default relative overflow-hidden"
+                    key={repo.id ?? repo.github_id ?? `${repo.full_name}-${i}`}
+                    className="group px-4 py-3 rounded-xl hover:bg-white/[0.03] transition-all duration-200 relative overflow-hidden"
                   >
-                    <div className={`absolute left-0 top-2 bottom-2 w-0.5 rounded-full transition-all duration-300 group-hover:opacity-100 ${i < 3 ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: langColor }} />
-                    <img
-                      src={`https://avatars.githubusercontent.com/${repo.owner}?size=24`}
-                      alt={repo.owner}
-                      className="w-6 h-6 rounded-full shrink-0 ring-1 ring-white/10"
-                      loading="lazy"
-                    />
-                    <div className={`
-                      w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0
-                      ${i < 3
-                        ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 text-orange-500'
-                        : 'bg-white/[0.04] border border-white/[0.06] text-gray-600'
-                      }
-                    `}>
-                      {i + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <a
-                        href={repo.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-orange-400/90 hover:text-orange-400 text-sm font-medium truncate block transition-colors"
-                      >
-                        {repo.full_name}
-                      </a>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: langColor }} />
-                        <span className="text-gray-600 text-xs">{repo.language || 'Unknown'}</span>
-                        <span className="text-gray-700 text-xs">· {repo.keyword}</span>
+                    <div className="flex items-start gap-3">
+                      <div className={`absolute left-0 top-2 bottom-2 w-0.5 rounded-full transition-all duration-300 group-hover:opacity-100 ${i < 3 ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: langColor }} />
+                      <img
+                        src={`https://avatars.githubusercontent.com/${repo.owner}?size=24`}
+                        alt={repo.owner}
+                        className="w-6 h-6 rounded-full shrink-0 ring-1 ring-white/10 mt-1"
+                        loading="lazy"
+                      />
+                      <div className={`
+                        w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5
+                        ${i < 3
+                          ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 text-orange-500'
+                          : 'bg-white/[0.04] border border-white/[0.06] text-gray-600'
+                        }
+                      `}>
+                        {i + 1}
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="flex items-center gap-1.5 text-red-500/90 text-sm font-semibold">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>
-                        {repo.stars.toLocaleString()}
-                      </span>
-                      <svg className="w-4 h-4 text-gray-700 opacity-0 group-hover:opacity-100 transition-all duration-200 -translate-x-1 group-hover:translate-x-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                      </svg>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                          <a href={repo.url} target="_blank" rel="noopener noreferrer" className="text-orange-400/90 hover:text-orange-400 text-sm font-medium truncate transition-colors">
+                            {repo.full_name}
+                          </a>
+                          {repo.is_archived && <span className="text-[9px] px-1 py-0.5 rounded bg-gray-700/60 text-gray-400 shrink-0">archived</span>}
+                          {repo.latest_release && <span className="text-[9px] text-gray-600 shrink-0">🏷 {repo.latest_release}</span>}
+                        </div>
+                        {repo.description && <p className="text-gray-500 text-[11px] mt-0.5 leading-relaxed line-clamp-1">{repo.description}</p>}
+                        {(repo.topics ?? []).length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {(repo.topics ?? []).slice(0, 4).map(t => (
+                              <span key={t} className="text-[9px] px-1.5 py-0.5 rounded-full bg-orange-500/10 text-orange-400/70 border border-orange-500/15">{t}</span>
+                            ))}
+                          </div>
+                        )}
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: langColor }} />
+                          <span className="text-gray-600 text-xs">{repo.language || 'Unknown'}</span>
+                          <span className="text-gray-700 text-xs">· {repo.keyword}</span>
+                          {repo.license && <span className="text-gray-600 text-[10px]">⚖ {repo.license}</span>}
+                        </div>
+                        {(repo.languages ?? []).length > 1 && (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="text-[10px] text-gray-600 shrink-0">Lang:</span>
+                            <div className="flex h-1 rounded-full overflow-hidden flex-1 max-w-[140px] bg-gray-800/60">
+                              {(() => {
+                                const tb = (repo.languages ?? []).reduce((s, l) => s + l.size, 0)
+                                return (repo.languages ?? []).slice(0, 5).map(l => {
+                                  const pct = tb > 0 ? (l.size / tb) * 100 : 0
+                                  if (pct < 1) return null
+                                  return <div key={l.name} style={{ width: `${pct}%`, backgroundColor: LANG_COLORS[l.name] || '#6b7280' }} title={`${l.name}: ${pct.toFixed(1)}%`} />
+                                })
+                              })()}
+                            </div>
+                            <span className="text-[10px] text-gray-600">{repo.disk_usage ? (repo.disk_usage > 1024 ? `${(repo.disk_usage / 1024).toFixed(1)} MB` : `${repo.disk_usage} KB`) : '-'}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className="flex items-center gap-1.5 text-red-500/90 text-sm font-semibold whitespace-nowrap">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>
+                          {repo.stars.toLocaleString()}
+                        </span>
+                        <div className="flex items-center gap-2 text-gray-500 text-[11px]">
+                          <span title="Forks">⑂ {repo.forks?.toLocaleString()}</span>
+                          {repo.watchers != null && <span title="Watchers">👁 {repo.watchers.toLocaleString()}</span>}
+                        </div>
+                        <svg className="w-4 h-4 text-gray-700 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-1 group-hover:translate-x-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                        </svg>
+                      </div>
                     </div>
                   </div>
                 )})}

@@ -23,9 +23,15 @@ export default function Search() {
     enabled: searchTerm.length > 0,
   })
 
+  const handleSearch = (term: string) => {
+    setKeyword(term)
+    setSearchTerm(term)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (keyword.trim()) setSearchTerm(keyword.trim())
+    if (keyword.trim()) handleSearch(keyword.trim())
   }
 
   return (
@@ -61,7 +67,7 @@ export default function Search() {
             {SUGGESTIONS.map(s => (
               <button
                 key={s}
-                onClick={() => { setKeyword(s); setSearchTerm(s) }}
+                onClick={() => handleSearch(s)}
                 className="text-xs bg-gray-800/60 hover:bg-orange-600/20 text-gray-400 hover:text-orange-400 px-3 py-1.5 rounded-full border border-gray-700/50 hover:border-orange-700/50 transition-all"
               >
                 {s}
@@ -116,7 +122,7 @@ export default function Search() {
                 {(repo.topics ?? []).length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-3">
                     {(repo.topics ?? []).slice(0, 8).map(t => (
-                      <button key={t} onClick={() => { setKeyword(t); setSearchTerm(t) }} className="text-[11px] px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400/80 border border-orange-500/15 hover:bg-orange-500/20 hover:text-orange-300 transition-all cursor-pointer">{t}</button>
+                      <button key={t} onClick={() => handleSearch(t)} className="text-[11px] px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400/80 border border-orange-500/15 hover:bg-orange-500/20 hover:text-orange-300 transition-all cursor-pointer">{t}</button>
                     ))}
                   </div>
                 )}

@@ -7,6 +7,7 @@ export interface TrendLanguageEntry {
 
 export interface TrendRepo {
   id: number
+  github_id?: number
   full_name: string
   owner: string
   stars: number
