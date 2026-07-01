@@ -205,11 +205,7 @@ export default function Dashboard() {
                       width={40}
                     />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                    <Bar dataKey="stars" fill="url(#barGradient)" radius={[6, 6, 0, 0]} maxBarSize={48}>
-                      {starsPerKeyword.map((_, i) => (
-                        <Cell key={i} animationBegin={i * 60} />
-                      ))}
-                    </Bar>
+                    <Bar dataKey="stars" fill="url(#barGradient)" radius={[6, 6, 0, 0]} maxBarSize={48} animationBegin={300} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
