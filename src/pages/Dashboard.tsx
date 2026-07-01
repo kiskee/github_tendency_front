@@ -2,13 +2,20 @@ import React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Helmet } from 'react-helmet-async'
 import { getTrendsStats, getTrends, type TrendRepo } from '../api/trends'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from 'recharts'
 import { CardSkeleton } from '../components/Skeleton'
 import CountUp from '../components/CountUp'
 import ReportSidebar from '../components/ReportSidebar'
 
 const PIE_COLORS = ['#f97316', '#ef4444', '#dc2626', '#ea580c', '#c2410c', '#b91c1c', '#9a3412', '#7f1d1d']
 const CARD_BG = 'bg-black/40 backdrop-blur-2xl rounded-2xl border border-white/[0.06] hover:border-orange-500/20 transition-all duration-500 group'
+
+const LANG_COLORS: Record<string, string> = {
+  TypeScript: '#3178c6', JavaScript: '#f7df1e', Go: '#00add8', Python: '#3572a5',
+  Rust: '#dea584', Java: '#b07219', 'C++': '#f34b7d', Ruby: '#e0115f',
+  HTML: '#e34c26', CSS: '#563d7c', Shell: '#89e051', Kotlin: '#a97bff',
+  Swift: '#ffac45', Dart: '#00b4ab', Unknown: '#6b7280',
+}
 
 interface TooltipPayloadItem {
   value: number
@@ -123,24 +130,47 @@ export default function Dashboard() {
 
         <div className="space-y-10 min-w-0">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-          {cards.map((c, i) => (
-            <div key={c.key} className={`${CARD_BG} animate-fade-up stagger-${i} relative overflow-hidden`}>
+          {cards.map((c, i) => {
+          const langColor = c.key === 'Top Lang' ? LANG_COLORS[String(c.value)] || '#6b7280' : undefined
+          return (
+            <div key={c.key} className={`${CARD_BG} animate-fade-up stagger-${i} relative overflow-hidden flex flex-col`}>
               <div className="absolute inset-0 bg-gradient-to-br from-orange-500/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <div className="relative p-5">
+              <div className="relative p-5 flex-1">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-8 h-8 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500/70 group-hover:bg-orange-500/20 group-hover:border-orange-500/30 transition-all duration-300">
                     {statIcons[c.key]}
                   </div>
                   <span className="text-gray-600 text-[11px] font-medium uppercase tracking-[0.12em]">{c.label}</span>
                 </div>
-                <p className={`font-bold text-white tracking-tight ${c.key === 'Top Lang' ? 'text-base sm:text-lg lg:text-xl break-words' : 'text-xl sm:text-2xl lg:text-3xl truncate'}`}>
-                  {typeof c.value === 'number' ? <CountUp value={c.value} /> : c.value}
-                </p>
+                <div className="flex items-center gap-2">
+                  {c.key === 'Top Lang' && langColor && (
+                    <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: langColor }} />
+                  )}
+                  <p className={`font-bold text-white tracking-tight ${c.key === 'Top Lang' ? 'text-base sm:text-lg lg:text-xl break-words' : 'text-xl sm:text-2xl lg:text-3xl truncate'}`}>
+                    {typeof c.value === 'number' ? <CountUp value={c.value} /> : c.value}
+                  </p>
+                </div>
                 <p className="text-gray-700 text-xs mt-1.5 group-hover:text-gray-500 transition-colors duration-300">{c.detail}</p>
               </div>
-              <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-orange-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              {c.key !== 'Top Lang' && starsPerKeyword.length > 0 && (
+                <div className="h-10 mx-2 mb-1 opacity-40">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={starsPerKeyword}>
+                      <defs>
+                        <linearGradient id={`sparkGrad-${i}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#f97316" stopOpacity={0.3} />
+                          <stop offset="100%" stopColor="#f97316" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <Area type="monotone" dataKey="stars" stroke="#f97316" strokeWidth={1.5} fill={`url(#sparkGrad-${i})`} dot={false} isAnimationActive={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+              <div className="relative bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-orange-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             </div>
-          ))}
+          )
+          })}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -175,7 +205,11 @@ export default function Dashboard() {
                       width={40}
                     />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                    <Bar dataKey="stars" fill="url(#barGradient)" radius={[6, 6, 0, 0]} maxBarSize={48} />
+                    <Bar dataKey="stars" fill="url(#barGradient)" radius={[6, 6, 0, 0]} maxBarSize={48}>
+                      {starsPerKeyword.map((_, i) => (
+                        <Cell key={i} animationBegin={i * 60} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -189,8 +223,8 @@ export default function Dashboard() {
                   <div className="w-1 h-5 bg-gradient-to-b from-orange-500 to-red-600 rounded-full" />
                   <h3 className="text-base font-semibold text-white/90">Languages</h3>
                 </div>
-                <div className="flex flex-col items-center gap-5">
-                  <div className="w-full max-w-[200px]" style={{ aspectRatio: '1 / 1' }}>
+                  <div className="flex flex-col items-center gap-5">
+                  <div className="relative w-full max-w-[200px]" style={{ aspectRatio: '1 / 1' }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <defs>
@@ -221,6 +255,10 @@ export default function Dashboard() {
                         />
                       </PieChart>
                     </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-2xl font-bold text-white"><CountUp value={stats.data.total_repositories} /></span>
+                      <span className="text-[10px] text-gray-600 uppercase tracking-wider">total</span>
+                    </div>
                   </div>
                   <div className="w-full space-y-2">
                     {langData.map((l, i) => (
@@ -254,13 +292,22 @@ export default function Dashboard() {
                 <span className="text-gray-700 text-xs ml-auto">by stars</span>
               </div>
               <div className="space-y-1.5">
-                {topRepos.map((repo, i) => (
+                  {topRepos.map((repo, i) => {
+                  const langColor = LANG_COLORS[repo.language] || '#6b7280'
+                  return (
                   <div
                     key={repo.id}
-                    className="group flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/[0.03] transition-all duration-200 cursor-default"
+                    className="group flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/[0.03] transition-all duration-200 cursor-default relative overflow-hidden"
                   >
+                    <div className={`absolute left-0 top-2 bottom-2 w-0.5 rounded-full transition-all duration-300 group-hover:opacity-100 ${i < 3 ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: langColor }} />
+                    <img
+                      src={`https://avatars.githubusercontent.com/${repo.owner}?size=24`}
+                      alt={repo.owner}
+                      className="w-6 h-6 rounded-full shrink-0 ring-1 ring-white/10"
+                      loading="lazy"
+                    />
                     <div className={`
-                      w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0
+                      w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0
                       ${i < 3
                         ? 'bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 text-orange-500'
                         : 'bg-white/[0.04] border border-white/[0.06] text-gray-600'
@@ -277,11 +324,10 @@ export default function Dashboard() {
                       >
                         {repo.full_name}
                       </a>
-                      <div className="flex items-center gap-3 mt-0.5">
-                        <span className="text-gray-700 text-xs">{repo.keyword}</span>
-                        {repo.language && (
-                          <span className="text-gray-700 text-xs">· {repo.language}</span>
-                        )}
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: langColor }} />
+                        <span className="text-gray-600 text-xs">{repo.language || 'Unknown'}</span>
+                        <span className="text-gray-700 text-xs">· {repo.keyword}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
@@ -294,7 +340,7 @@ export default function Dashboard() {
                       </svg>
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
             </div>
           </div>
