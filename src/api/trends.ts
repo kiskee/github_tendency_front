@@ -6,26 +6,29 @@ export interface TrendLanguageEntry {
 }
 
 export interface TrendRepo {
-  id: number
-  github_id?: number
-  full_name: string
+  githubId: number
+  name: string
+  fullName: string
   owner: string
+  url: string
   stars: number
   forks: number
   watchers: number
-  open_issues: number
+  openIssues: number
+  license: string | null
   language: string
   languages: TrendLanguageEntry[]
-  license: string | null
-  latest_release: string | null
   topics: string[]
-  homepage_url: string | null
-  is_archived: boolean
-  disk_usage: number
+  latestRelease: string | null
+  homepageUrl: string | null
+  isArchived: boolean
+  diskUsage: number
   description: string
-  created_at: string
-  last_push: string
-  url: string
+  createdAt: string
+  lastPush: string
+  stars24h: number
+  stars7d: number
+  score: number
 }
 
 export interface TrendSearch {
@@ -35,12 +38,13 @@ export interface TrendSearch {
   last_searched_at: string
   created_at: string
   repositories: TrendRepo[]
-  trending_since?: string
-  tags?: string[]
 }
 
 export interface TrendsResponse {
   total: number
+  page: number
+  limit: number
+  repoLimit: number
   data: TrendSearch[]
 }
 
@@ -53,12 +57,21 @@ export interface TrendsStats {
   top_language: string
 }
 
-export function getTrends(params?: { keyword?: string; language?: string; sort?: string; limit?: number }): Promise<TrendsResponse> {
+export function getTrends(params?: {
+  keyword?: string
+  language?: string
+  sort?: string
+  limit?: number
+  page?: number
+  repoLimit?: number
+}): Promise<TrendsResponse> {
   const query = new URLSearchParams()
   if (params?.keyword) query.set('keyword', params.keyword)
   if (params?.language) query.set('language', params.language)
   if (params?.sort) query.set('sort', params.sort)
-  if (params?.limit) query.set('limit', String(params.limit))
+  if (params?.limit != null) query.set('limit', String(params.limit))
+  if (params?.page != null) query.set('page', String(params.page))
+  if (params?.repoLimit != null) query.set('repoLimit', String(params.repoLimit))
   const qs = query.toString()
   return request(`/trends${qs ? `?${qs}` : ''}`)
 }

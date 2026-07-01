@@ -144,9 +144,9 @@ export default function Dashboard() {
   const topRepos = trendsData
     .flatMap(t => t.repositories.map((r: TrendRepo) => ({ ...r, keyword: t.keyword })))
     .filter((r, i, arr) => {
-      const rid = r.id ?? r.github_id
+      const rid = r.githubId
       if (rid == null) return true
-      return arr.findIndex(x => (x.id ?? x.github_id) === rid) === i
+      return arr.findIndex(x => (x.githubId) === rid) === i
     })
     .sort((a, b) => b.stars - a.stars)
     .slice(0, 10)
@@ -395,7 +395,7 @@ export default function Dashboard() {
                   const langColor = LANG_COLORS[repo.language] || '#6b7280'
                   return (
                   <div
-                    key={repo.id ?? repo.github_id ?? `${repo.full_name}-${i}`}
+                    key={repo.githubId ?? `${repo.fullName}-${i}`}
                     className="group px-4 py-3 rounded-xl hover:bg-white/[0.03] transition-all duration-200 relative overflow-hidden"
                   >
                     <div className="flex items-start gap-3">
@@ -418,10 +418,10 @@ export default function Dashboard() {
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                           <a href={repo.url} target="_blank" rel="noopener noreferrer" className="text-orange-400/90 hover:text-orange-400 text-sm font-medium truncate transition-colors">
-                            {repo.full_name}
+                            {repo.fullName}
                           </a>
-                          {repo.is_archived && <span className="text-[9px] px-1 py-0.5 rounded bg-gray-700/60 text-gray-400 shrink-0">archived</span>}
-                          {repo.latest_release && <span className="text-[9px] text-gray-600 shrink-0">🏷 {repo.latest_release}</span>}
+                          {repo.isArchived && <span className="text-[9px] px-1 py-0.5 rounded bg-gray-700/60 text-gray-400 shrink-0">archived</span>}
+                          {repo.latestRelease && <span className="text-[9px] text-gray-600 shrink-0">🏷 {repo.latestRelease}</span>}
                         </div>
                         {repo.description && <p className="text-gray-500 text-[11px] mt-0.5 leading-relaxed line-clamp-1">{repo.description}</p>}
                         {(repo.topics ?? []).length > 0 && (
@@ -450,7 +450,7 @@ export default function Dashboard() {
                                 })
                               })()}
                             </div>
-                            <span className="text-[10px] text-gray-600">{repo.disk_usage ? (repo.disk_usage > 1024 ? `${(repo.disk_usage / 1024).toFixed(1)} MB` : `${repo.disk_usage} KB`) : '-'}</span>
+                            <span className="text-[10px] text-gray-600">{repo.diskUsage ? (repo.diskUsage > 1024 ? `${(repo.diskUsage / 1024).toFixed(1)} MB` : `${repo.diskUsage} KB`) : '-'}</span>
                           </div>
                         )}
                       </div>
