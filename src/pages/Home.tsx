@@ -420,15 +420,37 @@ function RepoList() {
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: langColor }} />
                     <span className="text-gray-600 text-xs">{repo.repository.language}</span>
                   </div>
-                  <p className="text-gray-500 text-xs mt-1 line-clamp-1">{repo.repository.description}</p>
+                  <p className="text-gray-500 text-xs mt-1 line-clamp-2">{repo.repository.description}</p>
 
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
-                    <span className="text-red-500 font-medium text-xs">⭐ {formatNumber(repo.repository.stars)}</span>
-                    <span className="text-gray-500 text-xs">⑂ {formatNumber(repo.repository.forks)} forks</span>
-                    <span className="text-orange-400 text-xs font-medium">🔥 {repo.repository.score.toLocaleString()}</span>
-                    <span className="text-green-400 text-xs">+24h {repo.repository.stars24h}</span>
-                    <span className="text-blue-400 text-xs">+7d {repo.repository.stars7d}</span>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs">
+                    <span className="text-red-500 font-medium">⭐ {formatNumber(repo.repository.stars)}</span>
+                    <span className="text-gray-500">⑂ {formatNumber(repo.repository.forks)} forks</span>
+                    <span className="text-orange-400 font-medium">🔥 {repo.repository.score.toLocaleString()}</span>
+                    <span className="text-green-400">+24h {repo.repository.stars24h}</span>
+                    <span className="text-blue-400">+7d {repo.repository.stars7d}</span>
                   </div>
+
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[10px] text-gray-600">
+                    {repo.repository.openIssues != null && <span>!{repo.repository.openIssues.toLocaleString()} issues</span>}
+                    {repo.repository.watchers != null && <span>👁 {repo.repository.watchers.toLocaleString()} watchers</span>}
+                    {repo.repository.license && <span>⚖ {repo.repository.license}</span>}
+                    {repo.repository.latestRelease && <span>🏷 {repo.repository.latestRelease}</span>}
+                    {repo.repository.isArchived && <span className="text-gray-500">archived</span>}
+                  </div>
+
+                  {repo.repository.topics && repo.repository.topics.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {repo.repository.topics.slice(0, 4).map((topic: string) => (
+                        <span key={topic} className="text-[9px] px-1.5 py-0.5 rounded-full bg-orange-500/10 text-orange-400/70 border border-orange-500/15">{topic}</span>
+                      ))}
+                    </div>
+                  )}
+
+                  {repo.repository.homepageUrl && (
+                    <a href={repo.repository.homepageUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-gray-600 hover:text-orange-400 mt-1 inline-block truncate max-w-[200px]">
+                      🌐 {repo.repository.homepageUrl}
+                    </a>
+                  )}
                 </div>
               </div>
 

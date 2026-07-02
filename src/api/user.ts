@@ -16,6 +16,14 @@ export interface TrackedRepoRepository {
   stars7d: number
   score: number
   lastPush: string
+  openIssues: number
+  watchers: number
+  license: string | null
+  latestRelease: string | null
+  topics: string[]
+  homepageUrl: string | null
+  isArchived: boolean
+  diskUsage: number
 }
 
 export interface TrackedRepo {
