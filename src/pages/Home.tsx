@@ -26,6 +26,7 @@ import {
   getRepoBranches,
   getRepoReleases,
   getRepoActivity,
+  getRepoScanHistory,
   type TrackedRepo,
   type SnapshotPoint,
   type CommitInfo,
@@ -33,6 +34,7 @@ import {
   type IssueInfo,
   type BranchInfo,
   type ReleaseInfo,
+  type ScanHistoryEntry,
 } from '../api/user'
 
 const LANG_COLORS: Record<string, string> = {
@@ -288,13 +290,17 @@ function AddRepoSection() {
   )
 }
 
-function RepoHistory({ repoId, fullName }: { repoId: number; fullName: string }) {
+function RepoHistory({ repoId }: { repoId: number }) {
   const { data, isLoading } = useQuery({
     queryKey: ['repo-history', repoId],
     queryFn: () => getRepoHistory(repoId),
   })
+  const { data: scanData, isLoading: scanLoading } = useQuery({
+    queryKey: ['repo-scan-history', repoId],
+    queryFn: () => getRepoScanHistory(repoId, 10),
+  })
 
-  if (isLoading) {
+  if (isLoading || scanLoading) {
     return (
       <div className="flex items-center gap-2 py-4">
         <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
@@ -303,7 +309,10 @@ function RepoHistory({ repoId, fullName }: { repoId: number; fullName: string })
     )
   }
 
-  if (!data || data.data.length < 2) {
+  const hasChartData = data && data.data.length >= 2
+  const hasScans = scanData && scanData.data.length > 0
+
+  if (!hasChartData && !hasScans) {
     return (
       <div className="py-4 text-center">
         <p className="text-gray-500 text-xs">Not enough history yet. Check back later.</p>
@@ -312,72 +321,92 @@ function RepoHistory({ repoId, fullName }: { repoId: number; fullName: string })
     )
   }
 
-  const chartData = data.data.map((s: SnapshotPoint) => ({
+  const chartData = hasChartData ? data.data.map((s: SnapshotPoint) => ({
     date: formatDate(s.collectedAt),
     stars: s.stars,
     forks: s.forks,
-  }))
+  })) : []
+
+  const statusColors: Record<string, string> = {
+    success: 'bg-green-500',
+    error: 'bg-red-500',
+  }
 
   return (
     <div className="mt-4 pt-4 border-t border-white/[0.06]">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-gray-500 text-xs font-medium uppercase tracking-wider">History for {fullName}</p>
-        <span className="text-gray-600 text-[10px]">{data.data.length} data points</span>
-      </div>
-      <div className="h-48 bg-gray-900/40 rounded-xl p-2">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-            <XAxis
-              dataKey="date"
-              tick={{ fill: '#6b7280', fontSize: 10 }}
-              tickLine={false}
-              axisLine={{ stroke: '#374151' }}
-            />
-            <YAxis
-              tick={{ fill: '#6b7280', fontSize: 10 }}
-              tickLine={false}
-              axisLine={{ stroke: '#374151' }}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: '#111827',
-                border: '1px solid #374151',
-                borderRadius: '0.75rem',
-                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4)',
-              }}
-              labelStyle={{ color: '#9ca3af' }}
-              itemStyle={{ color: '#f97316' }}
-            />
-            <Line
-              type="monotone"
-              dataKey="stars"
-              stroke="#f97316"
-              strokeWidth={2}
-              dot={{ fill: '#f97316', strokeWidth: 0, r: 3 }}
-              activeDot={{ r: 5, fill: '#f97316', strokeWidth: 2, stroke: '#fff' }}
-            />
-            <Line
-              type="monotone"
-              dataKey="forks"
-              stroke="#3b82f6"
-              strokeWidth={2}
-              dot={{ fill: '#3b82f6', strokeWidth: 0, r: 3 }}
-              activeDot={{ r: 5, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-      <div className="flex items-center gap-4 mt-2 justify-center">
-        <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
-          <span className="text-gray-500 text-[10px]">Stars</span>
+      {hasChartData && (
+        <>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-gray-500 text-xs font-medium uppercase tracking-wider">Stars & Forks History</p>
+            <span className="text-gray-600 text-[10px]">{data.data.length} data points</span>
+          </div>
+          <div className="h-48 bg-gray-900/40 rounded-xl p-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 10 }} tickLine={false} axisLine={{ stroke: '#374151' }} />
+                <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} tickLine={false} axisLine={{ stroke: '#374151' }} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '0.75rem', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4)' }}
+                  labelStyle={{ color: '#9ca3af' }}
+                  itemStyle={{ color: '#f97316' }}
+                />
+                <Line type="monotone" dataKey="stars" stroke="#f97316" strokeWidth={2} dot={{ fill: '#f97316', strokeWidth: 0, r: 3 }} activeDot={{ r: 5, fill: '#f97316', strokeWidth: 2, stroke: '#fff' }} />
+                <Line type="monotone" dataKey="forks" stroke="#3b82f6" strokeWidth={2} dot={{ fill: '#3b82f6', strokeWidth: 0, r: 3 }} activeDot={{ r: 5, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex items-center gap-4 mt-2 justify-center">
+            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-orange-500" /><span className="text-gray-500 text-[10px]">Stars</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-blue-500" /><span className="text-gray-500 text-[10px]">Forks</span></div>
+          </div>
+        </>
+      )}
+
+      {hasScans && (
+        <div className="mt-4 pt-4 border-t border-white/[0.06]">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-gray-500 text-xs font-medium uppercase tracking-wider">Scan History</p>
+            <span className="text-gray-600 text-[10px]">{scanData.total} scans</span>
+          </div>
+          <div className="space-y-2">
+            {scanData.data.map((scan: ScanHistoryEntry) => (
+              <div key={scan.id} className="bg-black/30 rounded-lg p-3 border border-gray-800/30">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${statusColors[scan.status] || 'bg-gray-500'}`} />
+                    <span className="text-gray-300 text-xs font-medium">
+                      {new Date(scan.scanned_at).toLocaleString()}
+                    </span>
+                  </div>
+                  <span className="text-gray-600 text-[10px]">{scan.duration_ms}ms</span>
+                </div>
+                <div className="grid grid-cols-4 gap-2 text-[10px]">
+                  <div className="text-center">
+                    <p className="text-orange-400 font-medium">{scan.commits_found}</p>
+                    <p className="text-gray-600">Commits</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-green-400 font-medium">{scan.prs_merged}</p>
+                    <p className="text-gray-600">PRs Merged</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-purple-400 font-medium">{scan.issues_closed}</p>
+                    <p className="text-gray-600">Issues Closed</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-red-500 font-medium">+{scan.stars_delta_24h}</p>
+                    <p className="text-gray-600">Stars 24h</p>
+                  </div>
+                </div>
+                {scan.error_message && (
+                  <p className="text-red-400 text-[10px] mt-2">{scan.error_message}</p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-          <span className="text-gray-500 text-[10px]">Forks</span>
-        </div>
-      </div>
+      )}
     </div>
   )
 }
@@ -904,7 +933,7 @@ function RepoList() {
             </div>
 
             {expandedId?.repoId === repo.id && expandedId?.type === 'history' && (
-              <RepoHistory repoId={repo.id} fullName={repo.repository.fullName} />
+              <RepoHistory repoId={repo.id} />
             )}
             {expandedId?.repoId === repo.id && expandedId?.type === 'commits' && (
               <RepoCommits repoId={repo.id} fullName={repo.repository.fullName} />

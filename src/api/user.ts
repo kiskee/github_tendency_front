@@ -222,3 +222,27 @@ export async function getRepoReleases(id: number, limit: number = 20, offset: nu
 export async function getRepoActivity(id: number): Promise<ActivitySummary> {
   return request(`/me/repos/${id}/activity`)
 }
+
+export interface ScanHistoryEntry {
+  id: number
+  scanned_at: string
+  duration_ms: number
+  status: string
+  commits_found: number
+  prs_opened: number
+  prs_merged: number
+  prs_closed: number
+  issues_opened: number
+  issues_closed: number
+  branches_count: number
+  releases_found: number
+  stars: number
+  forks: number
+  stars_delta_24h: number
+  score: number
+  error_message: string | null
+}
+
+export async function getRepoScanHistory(id: number, limit: number = 20, offset: number = 0): Promise<PaginatedResponse<ScanHistoryEntry>> {
+  return request(`/me/repos/${id}/scan-history?limit=${limit}&offset=${offset}`)
+}
