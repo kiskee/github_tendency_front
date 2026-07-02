@@ -20,9 +20,19 @@ import {
   getRepoHistory,
   getRepoCommits,
   refreshRepoCommits,
+  refreshAllRepoData,
+  getRepoPRs,
+  getRepoIssues,
+  getRepoBranches,
+  getRepoReleases,
+  getRepoActivity,
   type TrackedRepo,
   type SnapshotPoint,
   type CommitInfo,
+  type PRInfo,
+  type IssueInfo,
+  type BranchInfo,
+  type ReleaseInfo,
 } from '../api/user'
 
 const LANG_COLORS: Record<string, string> = {
@@ -474,15 +484,293 @@ function RepoCommits({ repoId, fullName }: { repoId: number; fullName: string })
   )
 }
 
+// ============================================
+// Activity Summary Card
+// ============================================
+
+function ActivityCard({ repoId }: { repoId: number }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['repo-activity', repoId],
+    queryFn: () => getRepoActivity(repoId),
+  })
+
+  if (isLoading) {
+    return <div className="flex items-center gap-2 py-2"><div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" /><span className="text-gray-500 text-xs">Loading activity...</span></div>
+  }
+
+  if (!data) return null
+
+  const items = [
+    { label: 'Commits (7d)', value: data.commits7d, color: 'text-orange-400' },
+    { label: 'PRs Merged', value: data.prsMerged7d, color: 'text-green-400' },
+    { label: 'PRs Open', value: data.totalOpenPrs, color: 'text-blue-400' },
+    { label: 'Issues Open', value: data.totalOpenIssues, color: 'text-yellow-400' },
+    { label: 'Issues Closed', value: data.issuesClosed7d, color: 'text-purple-400' },
+    { label: 'Branches', value: data.totalBranches, color: 'text-gray-400' },
+  ]
+
+  return (
+    <div className="mt-3 pt-3 border-t border-white/[0.06]">
+      <p className="text-gray-500 text-[10px] font-medium uppercase tracking-wider mb-2">Activity (7d)</p>
+      <div className="grid grid-cols-3 gap-2">
+        {items.map(item => (
+          <div key={item.label} className="text-center">
+            <p className={`text-sm font-bold ${item.color}`}>{item.value}</p>
+            <p className="text-gray-600 text-[9px]">{item.label}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// PRs Section
+// ============================================
+
+function RepoPRs({ repoId, fullName }: { repoId: number; fullName: string }) {
+  const [page, setPage] = useState(0)
+  const [stateFilter, setStateFilter] = useState<string>('')
+  const limit = 10
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['repo-prs', repoId, page, stateFilter],
+    queryFn: () => getRepoPRs(repoId, stateFilter || undefined, limit, page * limit),
+  })
+
+  if (isLoading) return <div className="flex items-center gap-2 py-4"><div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" /><span className="text-gray-500 text-xs">Loading PRs...</span></div>
+
+  if (!data || data.data.length === 0) {
+    return <div className="py-4 text-center"><p className="text-gray-500 text-xs">No pull requests found.</p></div>
+  }
+
+  const stateColors: Record<string, string> = {
+    OPEN: 'text-green-400 bg-green-500/10',
+    CLOSED: 'text-red-400 bg-red-500/10',
+    MERGED: 'text-purple-400 bg-purple-500/10',
+  }
+
+  const totalPages = Math.ceil(data.total / limit)
+
+  return (
+    <div className="mt-4 pt-4 border-t border-white/[0.06]">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-gray-500 text-xs font-medium uppercase tracking-wider">Pull Requests · {fullName}</p>
+        <div className="flex gap-1">
+          {['', 'OPEN', 'MERGED', 'CLOSED'].map(s => (
+            <button key={s} onClick={() => { setStateFilter(s); setPage(0) }}
+              className={`text-[10px] px-2 py-0.5 rounded-full transition-colors ${stateFilter === s ? 'bg-orange-500/20 text-orange-400' : 'text-gray-600 hover:text-gray-400'}`}>
+              {s || 'All'}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="space-y-2">
+        {data.data.map((pr: PRInfo) => (
+          <a key={pr.number} href={pr.url} target="_blank" rel="noopener noreferrer"
+            className="block bg-black/30 rounded-lg p-3 border border-gray-800/30 hover:border-orange-500/20 transition-all">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${stateColors[pr.state] || 'text-gray-400'}`}>{pr.state}</span>
+                  <span className="text-gray-500 text-[10px]">#{pr.number}</span>
+                </div>
+                <p className="text-gray-300 text-xs font-medium mt-1 line-clamp-1">{pr.title}</p>
+                <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-600">
+                  <span className="text-orange-400">{pr.author_login}</span>
+                  <span>· {new Date(pr.created_at).toLocaleDateString()}</span>
+                  {pr.labels.slice(0, 3).map(l => <span key={l} className="px-1 py-0.5 rounded bg-gray-800 text-gray-500">{l}</span>)}
+                </div>
+              </div>
+              <div className="text-[10px] text-gray-600 shrink-0 text-right">
+                <p className="text-green-400">+{pr.additions}</p>
+                <p className="text-red-400">-{pr.deletions}</p>
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-3">
+          <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="text-[10px] text-gray-400 hover:text-orange-400 disabled:opacity-40">← Newer</button>
+          <span className="text-gray-500 text-[10px]">Page {page + 1} of {totalPages}</span>
+          <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} className="text-[10px] text-gray-400 hover:text-orange-400 disabled:opacity-40">Older →</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================
+// Issues Section
+// ============================================
+
+function RepoIssues({ repoId, fullName }: { repoId: number; fullName: string }) {
+  const [page, setPage] = useState(0)
+  const [stateFilter, setStateFilter] = useState<string>('')
+  const limit = 10
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['repo-issues', repoId, page, stateFilter],
+    queryFn: () => getRepoIssues(repoId, stateFilter || undefined, limit, page * limit),
+  })
+
+  if (isLoading) return <div className="flex items-center gap-2 py-4"><div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" /><span className="text-gray-500 text-xs">Loading issues...</span></div>
+
+  if (!data || data.data.length === 0) {
+    return <div className="py-4 text-center"><p className="text-gray-500 text-xs">No issues found.</p></div>
+  }
+
+  const totalPages = Math.ceil(data.total / limit)
+
+  return (
+    <div className="mt-4 pt-4 border-t border-white/[0.06]">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-gray-500 text-xs font-medium uppercase tracking-wider">Issues · {fullName}</p>
+        <div className="flex gap-1">
+          {['', 'OPEN', 'CLOSED'].map(s => (
+            <button key={s} onClick={() => { setStateFilter(s); setPage(0) }}
+              className={`text-[10px] px-2 py-0.5 rounded-full transition-colors ${stateFilter === s ? 'bg-orange-500/20 text-orange-400' : 'text-gray-600 hover:text-gray-400'}`}>
+              {s || 'All'}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="space-y-2">
+        {data.data.map((issue: IssueInfo) => (
+          <a key={issue.number} href={issue.url} target="_blank" rel="noopener noreferrer"
+            className="block bg-black/30 rounded-lg p-3 border border-gray-800/30 hover:border-orange-500/20 transition-all">
+            <div className="flex items-start gap-2">
+              <span className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${issue.state === 'OPEN' ? 'bg-green-500' : 'bg-purple-500'}`} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500 text-[10px]">#{issue.number}</span>
+                </div>
+                <p className="text-gray-300 text-xs font-medium mt-1 line-clamp-1">{issue.title}</p>
+                <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-600">
+                  <span className="text-orange-400">{issue.author_login}</span>
+                  <span>· {new Date(issue.created_at).toLocaleDateString()}</span>
+                  <span>💬 {issue.comments_count}</span>
+                  {issue.labels.slice(0, 3).map(l => <span key={l} className="px-1 py-0.5 rounded bg-gray-800 text-gray-500">{l}</span>)}
+                </div>
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-3">
+          <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="text-[10px] text-gray-400 hover:text-orange-400 disabled:opacity-40">← Newer</button>
+          <span className="text-gray-500 text-[10px]">Page {page + 1} of {totalPages}</span>
+          <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} className="text-[10px] text-gray-400 hover:text-orange-400 disabled:opacity-40">Older →</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================
+// Branches Section
+// ============================================
+
+function RepoBranches({ repoId, fullName }: { repoId: number; fullName: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['repo-branches', repoId],
+    queryFn: () => getRepoBranches(repoId),
+  })
+
+  if (isLoading) return <div className="flex items-center gap-2 py-4"><div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" /><span className="text-gray-500 text-xs">Loading branches...</span></div>
+
+  if (!data || data.data.length === 0) {
+    return <div className="py-4 text-center"><p className="text-gray-500 text-xs">No branches found.</p></div>
+  }
+
+  return (
+    <div className="mt-4 pt-4 border-t border-white/[0.06]">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-gray-500 text-xs font-medium uppercase tracking-wider">Branches · {fullName}</p>
+        <span className="text-gray-600 text-[10px]">{data.total} total</span>
+      </div>
+      <div className="space-y-1.5">
+        {data.data.map((branch: BranchInfo) => (
+          <div key={branch.name} className="flex items-center justify-between bg-black/30 rounded-lg px-3 py-2 border border-gray-800/30">
+            <div className="flex items-center gap-2 min-w-0">
+              {branch.is_default && <span className="text-[9px] px-1 py-0.5 rounded bg-orange-500/20 text-orange-400 shrink-0">default</span>}
+              <span className="text-gray-300 text-xs font-mono truncate">{branch.name}</span>
+              {branch.has_open_pr && <span className="text-[9px] px-1 py-0.5 rounded bg-blue-500/20 text-blue-400 shrink-0">PR</span>}
+            </div>
+            <div className="text-[10px] text-gray-600 shrink-0">
+              {branch.last_commit_date && <span>{new Date(branch.last_commit_date).toLocaleDateString()}</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// Releases Section
+// ============================================
+
+function RepoReleases({ repoId, fullName }: { repoId: number; fullName: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['repo-releases', repoId],
+    queryFn: () => getRepoReleases(repoId),
+  })
+
+  if (isLoading) return <div className="flex items-center gap-2 py-4"><div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" /><span className="text-gray-500 text-xs">Loading releases...</span></div>
+
+  if (!data || data.data.length === 0) {
+    return <div className="py-4 text-center"><p className="text-gray-500 text-xs">No releases found.</p></div>
+  }
+
+  return (
+    <div className="mt-4 pt-4 border-t border-white/[0.06]">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-gray-500 text-xs font-medium uppercase tracking-wider">Releases · {fullName}</p>
+        <span className="text-gray-600 text-[10px]">{data.total} total</span>
+      </div>
+      <div className="space-y-2">
+        {data.data.map((release: ReleaseInfo) => (
+          <a key={release.tag_name} href={release.url} target="_blank" rel="noopener noreferrer"
+            className="block bg-black/30 rounded-lg p-3 border border-gray-800/30 hover:border-orange-500/20 transition-all">
+            <div className="flex items-center gap-2">
+              <span className="text-orange-400 text-xs font-medium">🏷 {release.tag_name}</span>
+              {release.is_prerelease && <span className="text-[9px] px-1 py-0.5 rounded bg-yellow-500/20 text-yellow-400">pre-release</span>}
+              {release.is_draft && <span className="text-[9px] px-1 py-0.5 rounded bg-gray-600/20 text-gray-400">draft</span>}
+            </div>
+            {release.name && <p className="text-gray-300 text-xs mt-1">{release.name}</p>}
+            <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-600">
+              {release.author_login && <span className="text-orange-400">{release.author_login}</span>}
+              <span>· {release.published_at ? new Date(release.published_at).toLocaleDateString() : 'Not published'}</span>
+            </div>
+            {release.body && <p className="text-gray-500 text-[10px] mt-1 line-clamp-2">{release.body}</p>}
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// Repo List (Updated)
+// ============================================
+
 function RepoList() {
   const queryClient = useQueryClient()
   const { data, isLoading } = useQuery({
     queryKey: ['tracked-repos'],
     queryFn: getTrackedRepos,
   })
-  const [expandedId, setExpandedId] = useState<{ repoId: number; type: 'history' | 'commits' } | null>(null)
+  type SectionType = 'history' | 'commits' | 'prs' | 'issues' | 'branches' | 'releases'
+  const [expandedId, setExpandedId] = useState<{ repoId: number; type: SectionType } | null>(null)
   const removeMutation = useMutation({
     mutationFn: removeTrackedRepo,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tracked-repos'] }),
+  })
+  const refreshAllMutation = useMutation({
+    mutationFn: refreshAllRepoData,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tracked-repos'] }),
   })
 
@@ -579,41 +867,38 @@ function RepoList() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              {/* Activity Summary Card */}
+              {expandedId?.repoId === repo.id && <ActivityCard repoId={repo.id} />}
+
+              <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                {(['history', 'commits', 'prs', 'issues', 'branches', 'releases'] as SectionType[]).map(type => {
+                  const labels: Record<SectionType, string> = {
+                    history: 'History', commits: 'Commits', prs: 'PRs',
+                    issues: 'Issues', branches: 'Branches', releases: 'Releases',
+                  }
+                  const isActive = expandedId?.repoId === repo.id && expandedId?.type === type
+                  return (
+                    <button key={type}
+                      onClick={() => setExpandedId(isActive ? null : { repoId: repo.id, type })}
+                      className={`text-[10px] transition-colors px-1.5 py-0.5 rounded ${isActive ? 'text-orange-400 bg-orange-500/10' : 'text-gray-500 hover:text-orange-400 hover:bg-orange-500/10'}`}>
+                      {labels[type]}
+                    </button>
+                  )
+                })}
                 <button
-                  onClick={() => setExpandedId(
-                    expandedId?.repoId === repo.id && expandedId?.type === 'history' 
-                      ? null 
-                      : { repoId: repo.id, type: 'history' }
-                  )}
-                  className={`text-xs transition-colors px-2 py-1 rounded-lg ${
-                    expandedId?.repoId === repo.id && expandedId?.type === 'history'
-                      ? 'text-orange-400 bg-orange-500/10'
-                      : 'text-gray-400 hover:text-orange-400 hover:bg-orange-500/10'
-                  }`}
+                  onClick={() => refreshAllMutation.mutate(repo.id)}
+                  disabled={refreshAllMutation.isPending}
+                  className="text-[10px] text-gray-500 hover:text-green-400 transition-colors px-1.5 py-0.5 rounded hover:bg-green-500/10 disabled:opacity-40"
+                  title="Refresh all data"
                 >
-                  History
-                </button>
-                <button
-                  onClick={() => setExpandedId(
-                    expandedId?.repoId === repo.id && expandedId?.type === 'commits' 
-                      ? null 
-                      : { repoId: repo.id, type: 'commits' }
-                  )}
-                  className={`text-xs transition-colors px-2 py-1 rounded-lg ${
-                    expandedId?.repoId === repo.id && expandedId?.type === 'commits'
-                      ? 'text-orange-400 bg-orange-500/10'
-                      : 'text-gray-400 hover:text-orange-400 hover:bg-orange-500/10'
-                  }`}
-                >
-                  Commits
+                  {refreshAllMutation.isPending ? '...' : '↻'}
                 </button>
                 <button
                   onClick={() => removeMutation.mutate(repo.id)}
                   disabled={removeMutation.isPending}
-                  className="text-xs text-red-400 hover:text-red-300 transition-colors px-2 py-1 rounded-lg hover:bg-red-500/10"
+                  className="text-[10px] text-red-400 hover:text-red-300 transition-colors px-1.5 py-0.5 rounded hover:bg-red-500/10"
                 >
-                  Remove
+                  ✕
                 </button>
               </div>
             </div>
@@ -623,6 +908,18 @@ function RepoList() {
             )}
             {expandedId?.repoId === repo.id && expandedId?.type === 'commits' && (
               <RepoCommits repoId={repo.id} fullName={repo.repository.fullName} />
+            )}
+            {expandedId?.repoId === repo.id && expandedId?.type === 'prs' && (
+              <RepoPRs repoId={repo.id} fullName={repo.repository.fullName} />
+            )}
+            {expandedId?.repoId === repo.id && expandedId?.type === 'issues' && (
+              <RepoIssues repoId={repo.id} fullName={repo.repository.fullName} />
+            )}
+            {expandedId?.repoId === repo.id && expandedId?.type === 'branches' && (
+              <RepoBranches repoId={repo.id} fullName={repo.repository.fullName} />
+            )}
+            {expandedId?.repoId === repo.id && expandedId?.type === 'releases' && (
+              <RepoReleases repoId={repo.id} fullName={repo.repository.fullName} />
             )}
           </div>
         )

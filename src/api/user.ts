@@ -1,6 +1,10 @@
 import { request } from './client'
 import type { User } from './auth'
 
+// ============================================
+// Types
+// ============================================
+
 export interface TrackedRepoRepository {
   id: number
   githubId: number
@@ -42,6 +46,86 @@ export interface SnapshotPoint {
   openIssues: number
 }
 
+export interface CommitInfo {
+  sha: string
+  message: string
+  authorName: string | null
+  authorEmail: string | null
+  authorDate: string | null
+  url: string
+}
+
+export interface PRInfo {
+  number: number
+  title: string
+  state: string
+  author_login: string
+  author_avatar: string | null
+  created_at: string
+  updated_at: string
+  closed_at: string | null
+  merged_at: string | null
+  additions: number
+  deletions: number
+  changed_files: number
+  reviewers: { login: string; state: string }[]
+  labels: string[]
+  head_branch: string
+  base_branch: string
+  url: string
+}
+
+export interface IssueInfo {
+  number: number
+  title: string
+  state: string
+  author_login: string
+  author_avatar: string | null
+  created_at: string
+  closed_at: string | null
+  labels: string[]
+  assignees: { login: string; avatar: string | null }[]
+  milestone: string | null
+  comments_count: number
+  url: string
+}
+
+export interface BranchInfo {
+  name: string
+  is_default: boolean
+  last_commit_sha: string | null
+  last_commit_message: string | null
+  last_commit_author: string | null
+  last_commit_date: string | null
+  has_open_pr: boolean
+}
+
+export interface ReleaseInfo {
+  tag_name: string
+  name: string | null
+  body: string | null
+  author_login: string | null
+  created_at: string
+  published_at: string | null
+  is_prerelease: boolean
+  is_draft: boolean
+  url: string
+}
+
+export interface ActivitySummary {
+  prsOpened7d: number
+  prsMerged7d: number
+  prsClosed7d: number
+  issuesOpened7d: number
+  issuesClosed7d: number
+  commits7d: number
+  releases30d: number
+  activeContributors: number
+  totalBranches: number
+  totalOpenPrs: number
+  totalOpenIssues: number
+}
+
 export interface MeResponse {
   user: User
 }
@@ -50,6 +134,24 @@ export interface TokenStatus {
   hasToken: boolean
   token: string | null
 }
+
+export interface CommitsResponse {
+  data: CommitInfo[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export interface PaginatedResponse<T> {
+  data: T[]
+  total: number
+  limit: number
+  offset: number
+}
+
+// ============================================
+// API Functions
+// ============================================
 
 export async function getMe(): Promise<MeResponse> {
   return request('/me')
@@ -85,26 +187,38 @@ export async function getRepoHistory(id: number): Promise<{ data: SnapshotPoint[
   return request(`/me/repos/${id}/history`)
 }
 
-export interface CommitInfo {
-  sha: string
-  message: string
-  authorName: string | null
-  authorEmail: string | null
-  authorDate: string | null
-  url: string
-}
-
-export interface CommitsResponse {
-  data: CommitInfo[]
-  total: number
-  limit: number
-  offset: number
-}
-
 export async function getRepoCommits(id: number, limit: number = 10, offset: number = 0): Promise<CommitsResponse> {
   return request(`/me/repos/${id}/commits?limit=${limit}&offset=${offset}`)
 }
 
 export async function refreshRepoCommits(id: number): Promise<{ message: string; commits: CommitInfo[] }> {
   return request(`/me/repos/${id}/refresh-commits`, { method: 'POST' })
+}
+
+export async function refreshAllRepoData(id: number): Promise<{ message: string; activity: ActivitySummary }> {
+  return request(`/me/repos/${id}/refresh-all`, { method: 'POST' })
+}
+
+export async function getRepoPRs(id: number, state?: string, limit: number = 20, offset: number = 0): Promise<PaginatedResponse<PRInfo>> {
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) })
+  if (state) params.set('state', state)
+  return request(`/me/repos/${id}/prs?${params.toString()}`)
+}
+
+export async function getRepoIssues(id: number, state?: string, limit: number = 20, offset: number = 0): Promise<PaginatedResponse<IssueInfo>> {
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) })
+  if (state) params.set('state', state)
+  return request(`/me/repos/${id}/issues?${params.toString()}`)
+}
+
+export async function getRepoBranches(id: number, limit: number = 50, offset: number = 0): Promise<PaginatedResponse<BranchInfo>> {
+  return request(`/me/repos/${id}/branches?limit=${limit}&offset=${offset}`)
+}
+
+export async function getRepoReleases(id: number, limit: number = 20, offset: number = 0): Promise<PaginatedResponse<ReleaseInfo>> {
+  return request(`/me/repos/${id}/releases?limit=${limit}&offset=${offset}`)
+}
+
+export async function getRepoActivity(id: number): Promise<ActivitySummary> {
+  return request(`/me/repos/${id}/activity`)
 }
