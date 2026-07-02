@@ -42,7 +42,7 @@ function App() {
         </NavLink>
         {user && (
           <NavLink to="/home" className={({ isActive }) => `text-sm sm:text-base pb-1 border-b-2 transition-colors ${isActive ? 'text-white border-orange-500' : 'text-gray-500 hover:text-orange-400 border-transparent'}`}>
-            My Home
+            Tracking
           </NavLink>
         )}
 
