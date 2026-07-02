@@ -1,10 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
-import { Routes, Route, NavLink } from 'react-router-dom'
+import { Routes, Route, NavLink, Link } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
 import Search from './pages/Search'
 import Trends from './pages/Trends'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import VerifyEmail from './pages/VerifyEmail'
+import Home from './pages/Home'
 import Footer from './components/Footer'
+import ProtectedRoute from './components/ProtectedRoute'
 import { getHealth } from './api/health'
+import { useAuth } from './context/AuthContext'
 
 function App() {
   const health = useQuery({
@@ -13,6 +19,7 @@ function App() {
     refetchInterval: 30_000,
   })
 
+  const { user, isLoading: authLoading, logout } = useAuth()
   const isOnline = health.isSuccess && health.data?.status === 'OK'
 
   return (
@@ -33,10 +40,36 @@ function App() {
         <NavLink to="/trends" className={({ isActive }) => `text-sm sm:text-base pb-1 border-b-2 transition-colors ${isActive ? 'text-white border-orange-500' : 'text-gray-500 hover:text-orange-400 border-transparent'}`}>
           Trends
         </NavLink>
+        {user && (
+          <NavLink to="/home" className={({ isActive }) => `text-sm sm:text-base pb-1 border-b-2 transition-colors ${isActive ? 'text-white border-orange-500' : 'text-gray-500 hover:text-orange-400 border-transparent'}`}>
+            My Home
+          </NavLink>
+        )}
 
-        <div className="ml-auto flex items-center gap-1.5 sm:gap-2 text-xs">
-          <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]' : 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]'}`} />
-          <span className="text-gray-500 hidden sm:inline">{isOnline ? 'Online' : 'Offline'}</span>
+        <div className="ml-auto flex items-center gap-3">
+          {!authLoading && (
+            user ? (
+              <button
+                onClick={() => logout()}
+                className="text-xs sm:text-sm text-gray-500 hover:text-orange-400 transition-colors"
+              >
+                Logout
+              </button>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Link to="/login" className="text-xs sm:text-sm text-gray-500 hover:text-orange-400 transition-colors">
+                  Login
+                </Link>
+                <Link to="/register" className="text-xs sm:text-sm bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded-lg transition-colors">
+                  Register
+                </Link>
+              </div>
+            )
+          )}
+          <div className="flex items-center gap-1.5 sm:gap-2 text-xs">
+            <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]' : 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]'}`} />
+            <span className="text-gray-500 hidden sm:inline">{isOnline ? 'Online' : 'Offline'}</span>
+          </div>
         </div>
       </nav>
 
@@ -45,6 +78,10 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/search" element={<Search />} />
           <Route path="/trends" element={<Trends />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
         </Routes>
       </main>
 

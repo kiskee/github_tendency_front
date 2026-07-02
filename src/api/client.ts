@@ -3,6 +3,7 @@ const API_KEY = import.meta.env.VITE_API_KEY
 
 export async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${endpoint}`, {
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
