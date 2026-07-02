@@ -202,6 +202,7 @@ function TokenSection() {
 
 function AddRepoSection() {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
   const [fullName, setFullName] = useState('')
   const { data: repos } = useQuery({
     queryKey: ['tracked-repos'],
@@ -215,7 +216,8 @@ function AddRepoSection() {
     },
   })
 
-  const isLimitReached = repos && repos.data && repos.data.length >= 1
+  const isAdmin = user?.role === 'admin'
+  const isLimitReached = !isAdmin && repos && repos.data && repos.data.length >= 1
   const isValidFormat = fullName.match(/^[^/]+\/[^/]+$/)
 
   return (
