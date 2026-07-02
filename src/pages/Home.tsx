@@ -19,6 +19,7 @@ import {
   removeTrackedRepo,
   getRepoHistory,
   getRepoCommits,
+  refreshRepoCommits,
   type TrackedRepo,
   type SnapshotPoint,
   type CommitInfo,
@@ -372,12 +373,20 @@ function RepoHistory({ repoId, fullName }: { repoId: number; fullName: string })
 }
 
 function RepoCommits({ repoId, fullName }: { repoId: number; fullName: string }) {
+  const queryClient = useQueryClient()
   const [page, setPage] = useState(0)
   const limit = 10
   
   const { data, isLoading } = useQuery({
     queryKey: ['repo-commits', repoId, page],
     queryFn: () => getRepoCommits(repoId, limit, page * limit),
+  })
+
+  const refreshMutation = useMutation({
+    mutationFn: () => refreshRepoCommits(repoId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['repo-commits', repoId] })
+    },
   })
 
   if (isLoading) {
@@ -394,6 +403,13 @@ function RepoCommits({ repoId, fullName }: { repoId: number; fullName: string })
       <div className="py-4 text-center">
         <p className="text-gray-500 text-xs">No commits found yet.</p>
         <p className="text-gray-600 text-[10px] mt-1">Commits will appear after the next hourly scan.</p>
+        <button
+          onClick={() => refreshMutation.mutate()}
+          disabled={refreshMutation.isPending}
+          className="mt-2 px-3 py-1.5 text-[10px] text-orange-400 hover:text-orange-300 border border-orange-500/30 rounded-lg hover:bg-orange-500/10 transition-all disabled:opacity-50"
+        >
+          {refreshMutation.isPending ? 'Fetching...' : 'Fetch Commits Now'}
+        </button>
       </div>
     )
   }

@@ -104,3 +104,7 @@ export interface CommitsResponse {
 export async function getRepoCommits(id: number, limit: number = 10, offset: number = 0): Promise<CommitsResponse> {
   return request(`/me/repos/${id}/commits?limit=${limit}&offset=${offset}`)
 }
+
+export async function refreshRepoCommits(id: number): Promise<{ message: string; commits: CommitInfo[] }> {
+  return request(`/me/repos/${id}/refresh-commits`, { method: 'POST' })
+}
