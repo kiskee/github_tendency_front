@@ -16,6 +16,7 @@ export interface TrackedRepoRepository {
   stars7d: number
   score: number
   lastPush: string
+  collectedAt: string
   openIssues: number
   watchers: number
   license: string | null
@@ -82,4 +83,24 @@ export async function removeTrackedRepo(id: number): Promise<{ message: string }
 
 export async function getRepoHistory(id: number): Promise<{ data: SnapshotPoint[] }> {
   return request(`/me/repos/${id}/history`)
+}
+
+export interface CommitInfo {
+  sha: string
+  message: string
+  authorName: string | null
+  authorEmail: string | null
+  authorDate: string | null
+  url: string
+}
+
+export interface CommitsResponse {
+  data: CommitInfo[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export async function getRepoCommits(id: number, limit: number = 10, offset: number = 0): Promise<CommitsResponse> {
+  return request(`/me/repos/${id}/commits?limit=${limit}&offset=${offset}`)
 }

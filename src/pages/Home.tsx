@@ -18,8 +18,10 @@ import {
   addTrackedRepo,
   removeTrackedRepo,
   getRepoHistory,
+  getRepoCommits,
   type TrackedRepo,
   type SnapshotPoint,
+  type CommitInfo,
 } from '../api/user'
 
 const LANG_COLORS: Record<string, string> = {
@@ -47,6 +49,21 @@ function formatDate(iso: string) {
 function formatNumber(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`
   return String(n)
+}
+
+function formatRelativeTime(iso: string): string {
+  const date = new Date(iso)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMins < 1) return 'just now'
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffDays < 7) return `${diffDays}d ago`
+  return formatDate(iso)
 }
 
 function ProfileCard() {
@@ -354,13 +371,100 @@ function RepoHistory({ repoId, fullName }: { repoId: number; fullName: string })
   )
 }
 
+function RepoCommits({ repoId, fullName }: { repoId: number; fullName: string }) {
+  const [page, setPage] = useState(0)
+  const limit = 10
+  
+  const { data, isLoading } = useQuery({
+    queryKey: ['repo-commits', repoId, page],
+    queryFn: () => getRepoCommits(repoId, limit, page * limit),
+  })
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 py-4">
+        <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+        <span className="text-gray-500 text-xs">Loading commits...</span>
+      </div>
+    )
+  }
+
+  if (!data || data.data.length === 0) {
+    return (
+      <div className="py-4 text-center">
+        <p className="text-gray-500 text-xs">No commits found yet.</p>
+        <p className="text-gray-600 text-[10px] mt-1">Commits will appear after the next hourly scan.</p>
+      </div>
+    )
+  }
+
+  const totalPages = Math.ceil(data.total / limit)
+
+  return (
+    <div className="mt-4 pt-4 border-t border-white/[0.06]">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-gray-500 text-xs font-medium uppercase tracking-wider">Recent commits for {fullName}</p>
+        <span className="text-gray-600 text-[10px]">{data.total} total commits</span>
+      </div>
+      
+      <div className="space-y-2">
+        {data.data.map((commit: CommitInfo) => (
+          <div key={commit.sha} className="bg-black/30 rounded-lg p-3 border border-gray-800/30">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-gray-300 text-xs font-medium line-clamp-2">{commit.message}</p>
+                <div className="flex items-center gap-2 mt-1.5 text-[10px] text-gray-500">
+                  <span className="text-orange-400">{commit.authorName || 'Unknown'}</span>
+                  <span>·</span>
+                  <span>{commit.authorDate ? new Date(commit.authorDate).toLocaleDateString() : 'Unknown date'}</span>
+                  <span>·</span>
+                  <a 
+                    href={commit.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-gray-600 hover:text-orange-400 transition-colors"
+                  >
+                    {commit.sha.substring(0, 7)}
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <button
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="text-xs text-gray-400 hover:text-orange-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            ← Newer
+          </button>
+          <span className="text-gray-500 text-[10px]">
+            Page {page + 1} of {totalPages}
+          </span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+            className="text-xs text-gray-400 hover:text-orange-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Older →
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function RepoList() {
   const queryClient = useQueryClient()
   const { data, isLoading } = useQuery({
     queryKey: ['tracked-repos'],
     queryFn: getTrackedRepos,
   })
-  const [expandedId, setExpandedId] = useState<number | null>(null)
+  const [expandedId, setExpandedId] = useState<{ repoId: number; type: 'history' | 'commits' } | null>(null)
   const removeMutation = useMutation({
     mutationFn: removeTrackedRepo,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tracked-repos'] }),
@@ -436,6 +540,11 @@ function RepoList() {
                     {repo.repository.license && <span>⚖ {repo.repository.license}</span>}
                     {repo.repository.latestRelease && <span>🏷 {repo.repository.latestRelease}</span>}
                     {repo.repository.isArchived && <span className="text-gray-500">archived</span>}
+                    {repo.repository.collectedAt && (
+                      <span title={`Last updated: ${new Date(repo.repository.collectedAt).toLocaleString()}`}>
+                        🔄 {formatRelativeTime(repo.repository.collectedAt)}
+                      </span>
+                    )}
                   </div>
 
                   {repo.repository.topics && repo.repository.topics.length > 0 && (
@@ -456,10 +565,32 @@ function RepoList() {
 
               <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={() => setExpandedId(expandedId === repo.id ? null : repo.id)}
-                  className="text-xs text-gray-400 hover:text-orange-400 transition-colors px-2 py-1 rounded-lg hover:bg-orange-500/10"
+                  onClick={() => setExpandedId(
+                    expandedId?.repoId === repo.id && expandedId?.type === 'history' 
+                      ? null 
+                      : { repoId: repo.id, type: 'history' }
+                  )}
+                  className={`text-xs transition-colors px-2 py-1 rounded-lg ${
+                    expandedId?.repoId === repo.id && expandedId?.type === 'history'
+                      ? 'text-orange-400 bg-orange-500/10'
+                      : 'text-gray-400 hover:text-orange-400 hover:bg-orange-500/10'
+                  }`}
                 >
-                  {expandedId === repo.id ? 'Hide' : 'History'}
+                  History
+                </button>
+                <button
+                  onClick={() => setExpandedId(
+                    expandedId?.repoId === repo.id && expandedId?.type === 'commits' 
+                      ? null 
+                      : { repoId: repo.id, type: 'commits' }
+                  )}
+                  className={`text-xs transition-colors px-2 py-1 rounded-lg ${
+                    expandedId?.repoId === repo.id && expandedId?.type === 'commits'
+                      ? 'text-orange-400 bg-orange-500/10'
+                      : 'text-gray-400 hover:text-orange-400 hover:bg-orange-500/10'
+                  }`}
+                >
+                  Commits
                 </button>
                 <button
                   onClick={() => removeMutation.mutate(repo.id)}
@@ -471,8 +602,11 @@ function RepoList() {
               </div>
             </div>
 
-            {expandedId === repo.id && (
+            {expandedId?.repoId === repo.id && expandedId?.type === 'history' && (
               <RepoHistory repoId={repo.id} fullName={repo.repository.fullName} />
+            )}
+            {expandedId?.repoId === repo.id && expandedId?.type === 'commits' && (
+              <RepoCommits repoId={repo.id} fullName={repo.repository.fullName} />
             )}
           </div>
         )
