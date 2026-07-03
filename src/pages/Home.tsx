@@ -179,7 +179,8 @@ function RepoHistory({ repoId }: { repoId: number }) {
   const { data: scanData, isLoading: scanLoading } = useQuery({
     queryKey: ['repo-scan-history', repoId],
     queryFn: () => getRepoScanHistory(repoId, 10),
-    refetchInterval: 300000,
+    refetchInterval: 3600000,
+    refetchOnWindowFocus: true,
   })
 
   if (isLoading || scanLoading) {
@@ -306,7 +307,8 @@ function RepoCommits({ repoId, fullName }: { repoId: number; fullName: string })
   const { data, isLoading } = useQuery({
     queryKey: ['repo-commits', repoId, page],
     queryFn: () => getRepoCommits(repoId, limit, page * limit),
-    refetchInterval: 300000,
+    refetchInterval: 3600000,
+    refetchOnWindowFocus: true,
   })
 
   const refreshMutation = useMutation({
@@ -413,7 +415,8 @@ function RepoPRs({ repoId, fullName }: { repoId: number; fullName: string }) {
   const { data, isLoading } = useQuery({
     queryKey: ['repo-prs', repoId, page, stateFilter],
     queryFn: () => getRepoPRs(repoId, stateFilter || undefined, limit, page * limit),
-    refetchInterval: 300000,
+    refetchInterval: 3600000,
+    refetchOnWindowFocus: true,
   })
 
   if (isLoading) return <div className="flex items-center gap-2 py-4"><div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" /><span className="text-gray-500 text-xs">Loading PRs...</span></div>
@@ -491,7 +494,8 @@ function RepoIssues({ repoId, fullName }: { repoId: number; fullName: string }) 
   const { data, isLoading } = useQuery({
     queryKey: ['repo-issues', repoId, page, stateFilter],
     queryFn: () => getRepoIssues(repoId, stateFilter || undefined, limit, page * limit),
-    refetchInterval: 300000,
+    refetchInterval: 3600000,
+    refetchOnWindowFocus: true,
   })
 
   if (isLoading) return <div className="flex items-center gap-2 py-4"><div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" /><span className="text-gray-500 text-xs">Loading issues...</span></div>
@@ -556,7 +560,8 @@ function RepoBranches({ repoId, fullName }: { repoId: number; fullName: string }
   const { data, isLoading } = useQuery({
     queryKey: ['repo-branches', repoId],
     queryFn: () => getRepoBranches(repoId),
-    refetchInterval: 300000,
+    refetchInterval: 3600000,
+    refetchOnWindowFocus: true,
   })
 
   if (isLoading) return <div className="flex items-center gap-2 py-4"><div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" /><span className="text-gray-500 text-xs">Loading branches...</span></div>
@@ -597,7 +602,8 @@ function RepoReleases({ repoId, fullName }: { repoId: number; fullName: string }
   const { data, isLoading } = useQuery({
     queryKey: ['repo-releases', repoId],
     queryFn: () => getRepoReleases(repoId),
-    refetchInterval: 300000,
+    refetchInterval: 3600000,
+    refetchOnWindowFocus: true,
   })
 
   if (isLoading) return <div className="flex items-center gap-2 py-4"><div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" /><span className="text-gray-500 text-xs">Loading releases...</span></div>
@@ -643,7 +649,8 @@ function RepoList() {
   const { data, isLoading } = useQuery({
     queryKey: ['tracked-repos'],
     queryFn: getTrackedRepos,
-    refetchInterval: 300000,
+    refetchInterval: 3600000,
+    refetchOnWindowFocus: true,
   })
   type SectionType = 'history' | 'commits' | 'prs' | 'issues' | 'branches' | 'releases'
   const [expandedId, setExpandedId] = useState<{ repoId: number; type: SectionType } | null>(null)
@@ -657,7 +664,16 @@ function RepoList() {
   })
   const refreshAllMutation = useMutation({
     mutationFn: refreshAllRepoData,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tracked-repos'] }),
+    onSuccess: (_data, repoId) => {
+      queryClient.invalidateQueries({ queryKey: ['tracked-repos'] })
+      queryClient.invalidateQueries({ queryKey: ['repo-commits', repoId] })
+      queryClient.invalidateQueries({ queryKey: ['repo-prs', repoId] })
+      queryClient.invalidateQueries({ queryKey: ['repo-issues', repoId] })
+      queryClient.invalidateQueries({ queryKey: ['repo-branches', repoId] })
+      queryClient.invalidateQueries({ queryKey: ['repo-releases', repoId] })
+      queryClient.invalidateQueries({ queryKey: ['repo-history', repoId] })
+      queryClient.invalidateQueries({ queryKey: ['repo-scan-history', repoId] })
+    },
   })
 
   if (isLoading) {
@@ -863,7 +879,8 @@ function ReportsSection() {
   const { data, isLoading } = useQuery({
     queryKey: ['reports', page],
     queryFn: () => getReports(limit, page * limit),
-    refetchInterval: 600000,
+    refetchInterval: 3600000,
+    refetchOnWindowFocus: true,
   })
 
   if (isLoading) {
