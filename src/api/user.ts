@@ -253,8 +253,65 @@ export interface ScanHistoryEntry {
   stars_delta_24h: number
   score: number
   error_message: string | null
+  delta_text: string | null
 }
 
 export async function getRepoScanHistory(id: number, limit: number = 20, offset: number = 0): Promise<PaginatedResponse<ScanHistoryEntry>> {
   return request(`/me/repos/${id}/scan-history?limit=${limit}&offset=${offset}`)
+}
+
+// ============================================
+// Preferences & Reports Types
+// ============================================
+
+export interface UserPreferences {
+  email_reports_enabled: boolean
+  email_frequency: '2h' | '4h' | '6h' | '12h' | '24h'
+  last_report_sent_at: string | null
+}
+
+export interface PeriodicReportData {
+  summary: string
+  period_hours: number
+  generated_at: string
+  total_repos: number
+  total_commits: number
+  total_prs_opened: number
+  total_prs_merged: number
+  total_prs_closed: number
+  total_issues_opened: number
+  total_issues_closed: number
+  total_stars_change: number
+  total_forks_change: number
+  total_score_change: number
+  most_active_repos: Array<{ full_name: string; activity_summary: string }>
+}
+
+export interface PeriodicReport {
+  id: number
+  report_type: string
+  period_hours: number
+  report_data: PeriodicReportData
+  report_text: string
+  sent_at: string
+}
+
+// ============================================
+// Preferences & Reports API Functions
+// ============================================
+
+export async function getPreferences(): Promise<UserPreferences> {
+  return request('/me/preferences')
+}
+
+export async function updatePreferences(data: { email_reports_enabled?: boolean; email_frequency?: UserPreferences['email_frequency'] }): Promise<UserPreferences> {
+  return request('/me/preferences', { method: 'PUT', body: JSON.stringify(data) })
+}
+
+export async function getReports(limit: number = 20, offset: number = 0): Promise<PaginatedResponse<PeriodicReport>> {
+  return request(`/me/reports?limit=${limit}&offset=${offset}`)
+}
+
+export async function getReport(id: number): Promise<PeriodicReport> {
+  return request(`/me/reports/${id}`)
 }

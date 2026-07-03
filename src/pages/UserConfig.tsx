@@ -2,7 +2,118 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Helmet } from 'react-helmet-async'
 import { useAuth } from '../context/AuthContext'
-import { getGithubTokenStatus, saveGithubToken, deleteGithubToken, updateProfile, getTrackedRepos } from '../api/user'
+import { getGithubTokenStatus, saveGithubToken, deleteGithubToken, updateProfile, getTrackedRepos, getPreferences, updatePreferences, type UserPreferences } from '../api/user'
+
+function NotificationsSection() {
+  const queryClient = useQueryClient()
+  const [saved, setSaved] = useState(false)
+
+  const { data: prefs, isLoading } = useQuery({
+    queryKey: ['user-preferences'],
+    queryFn: getPreferences,
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: updatePreferences,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-preferences'] })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    },
+  })
+
+  if (isLoading) {
+    return (
+      <div className="bg-black/40 backdrop-blur-2xl rounded-2xl p-6 border border-white/[0.06]">
+        <div className="flex items-center gap-2 py-4">
+          <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-gray-500 text-xs">Loading notifications...</span>
+        </div>
+      </div>
+    )
+  }
+
+  const frequencies: { value: UserPreferences['email_frequency']; label: string }[] = [
+    { value: '2h', label: 'Every 2 hours' },
+    { value: '4h', label: 'Every 4 hours' },
+    { value: '6h', label: 'Every 6 hours' },
+    { value: '12h', label: 'Every 12 hours' },
+    { value: '24h', label: 'Every 24 hours' },
+  ]
+
+  return (
+    <div className="bg-black/40 backdrop-blur-2xl rounded-2xl p-6 border border-white/[0.06]">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+          </svg>
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-white">Email Reports</h3>
+          <p className="text-gray-500 text-xs">Receive periodic activity reports for your tracked repos</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-white">Enable email reports</p>
+            <p className="text-[10px] text-gray-600">Get summaries of commits, PRs, issues, and stars</p>
+          </div>
+          <button
+            onClick={() => updateMutation.mutate({ email_reports_enabled: !prefs?.email_reports_enabled })}
+            className={`relative w-11 h-6 rounded-full transition-colors ${
+              prefs?.email_reports_enabled ? 'bg-orange-600' : 'bg-gray-700'
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                prefs?.email_reports_enabled ? 'translate-x-5' : ''
+              }`}
+            />
+          </button>
+        </div>
+
+        {prefs?.email_reports_enabled && (
+          <div>
+            <label className="block text-xs text-gray-500 mb-2">Report frequency</label>
+            <div className="grid grid-cols-5 gap-2">
+              {frequencies.map((freq) => (
+                <button
+                  key={freq.value}
+                  onClick={() => updateMutation.mutate({ email_frequency: freq.value })}
+                  className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                    prefs.email_frequency === freq.value
+                      ? 'bg-orange-600 text-white'
+                      : 'bg-gray-900/60 text-gray-500 hover:text-white hover:bg-gray-800/60 border border-gray-800/50'
+                  }`}
+                >
+                  {freq.value}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {prefs?.last_report_sent_at && (
+          <p className="text-[10px] text-gray-600">
+            Last report sent: {new Date(prefs.last_report_sent_at).toLocaleString()}
+          </p>
+        )}
+
+        <div className="flex items-center gap-3 pt-2">
+          {saved && (
+            <span className="text-green-400 text-sm">Settings saved!</span>
+          )}
+          {updateMutation.isError && (
+            <span className="text-red-400 text-sm">{updateMutation.error instanceof Error ? updateMutation.error.message : 'Failed to save'}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function ProfileSection() {
   const { user, refetchUser } = useAuth()
@@ -306,6 +417,7 @@ export default function UserConfig() {
 
       <ProfileSection />
       <TokenSection />
+      <NotificationsSection />
       <PlanSection />
     </div>
   )
