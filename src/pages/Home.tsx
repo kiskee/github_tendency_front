@@ -681,9 +681,13 @@ function RepoList() {
   })
   type SectionType = 'history' | 'commits' | 'prs' | 'issues' | 'branches' | 'releases'
   const [expandedId, setExpandedId] = useState<{ repoId: number; type: SectionType } | null>(null)
+  const [repoToDelete, setRepoToDelete] = useState<TrackedRepo | null>(null)
   const removeMutation = useMutation({
     mutationFn: removeTrackedRepo,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tracked-repos'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tracked-repos'] })
+      setRepoToDelete(null)
+    },
   })
   const refreshAllMutation = useMutation({
     mutationFn: refreshAllRepoData,
@@ -723,7 +727,7 @@ function RepoList() {
             key={repo.id}
             className="bg-black/30 hover:bg-black/50 rounded-xl p-4 border border-gray-800/30 hover:border-orange-500/20 transition-all duration-300 group"
           >
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <div className="flex items-start gap-3 min-w-0">
                 <img
                   src={`https://avatars.githubusercontent.com/${repo.repository.owner}?size=32`}
@@ -786,9 +790,6 @@ function RepoList() {
                 </div>
               </div>
 
-              {/* Activity Summary Card */}
-              {expandedId?.repoId === repo.id && <ActivityCard repoId={repo.id} />}
-
               <div className="flex items-center gap-1 shrink-0">
                 <div className="flex items-center gap-0.5 flex-wrap justify-end">
                   {(['history', 'commits', 'prs', 'issues', 'branches', 'releases'] as SectionType[]).map(type => {
@@ -800,7 +801,7 @@ function RepoList() {
                     return (
                       <button key={type}
                         onClick={() => setExpandedId(isActive ? null : { repoId: repo.id, type })}
-                        className={`text-[10px] sm:text-[10px] transition-colors px-1.5 py-0.5 rounded ${isActive ? 'text-orange-400 bg-orange-500/10' : 'text-gray-500 hover:text-orange-400 hover:bg-orange-500/10'}`}>
+                        className={`text-[10px] transition-colors px-1.5 py-0.5 rounded ${isActive ? 'text-orange-400 bg-orange-500/10' : 'text-gray-500 hover:text-orange-400 hover:bg-orange-500/10'}`}>
                         {labels[type]}
                       </button>
                     )
@@ -816,7 +817,7 @@ function RepoList() {
                     {refreshAllMutation.isPending ? '...' : '↻'}
                   </button>
                   <button
-                    onClick={() => removeMutation.mutate(repo.id)}
+                    onClick={() => setRepoToDelete(repo)}
                     disabled={removeMutation.isPending}
                     className="text-[10px] text-red-400 hover:text-red-300 transition-colors px-1 py-0.5 rounded hover:bg-red-500/10"
                   >
@@ -847,6 +848,44 @@ function RepoList() {
           </div>
         )
       })}
+
+      {repoToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => !removeMutation.isPending && setRepoToDelete(null)}>
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+          <div className="relative bg-black/80 backdrop-blur-2xl rounded-2xl border border-orange-500/20 shadow-2xl shadow-orange-600/10 p-6 max-w-sm w-full animate-fade-up" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-white font-semibold">Remove repository</h3>
+                <p className="text-gray-500 text-xs">This action cannot be undone</p>
+              </div>
+            </div>
+            <p className="text-gray-400 text-sm mb-5 leading-relaxed">
+              Stop tracking <span className="text-orange-400 font-medium">{repoToDelete.repository.fullName}</span>? All scan history and data will be lost.
+            </p>
+            <div className="flex items-center gap-3 justify-end">
+              <button
+                onClick={() => setRepoToDelete(null)}
+                disabled={removeMutation.isPending}
+                className="px-4 py-2.5 text-sm text-gray-400 hover:text-white transition-colors rounded-xl hover:bg-white/[0.05]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => removeMutation.mutate(repoToDelete.id)}
+                disabled={removeMutation.isPending}
+                className="bg-orange-600 hover:bg-orange-500 disabled:opacity-50 px-5 py-2.5 rounded-xl font-medium transition-all hover:shadow-lg hover:shadow-orange-600/20 active:scale-95 text-sm"
+              >
+                {removeMutation.isPending ? 'Removing...' : 'Remove'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
