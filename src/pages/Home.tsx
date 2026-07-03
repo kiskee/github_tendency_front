@@ -24,6 +24,7 @@ import {
   getRepoIssues,
   getRepoBranches,
   getRepoReleases,
+  getRepoActivity,
   getRepoScanHistory,
   getReports,
   type TrackedRepo,
@@ -640,6 +641,49 @@ function RepoReleases({ repoId, fullName }: { repoId: number; fullName: string }
   )
 }
 
+function ActivitySection({ repoId }: { repoId: number }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['repo-activity', repoId],
+    queryFn: () => getRepoActivity(repoId),
+    refetchInterval: 3600000,
+    refetchOnWindowFocus: true,
+  })
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 py-4">
+        <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+        <span className="text-gray-500 text-xs">Loading activity...</span>
+      </div>
+    )
+  }
+
+  if (!data) return null
+
+  const items = [
+    { label: 'Commits (7d)', value: data.commits7d, color: 'text-orange-400' },
+    { label: 'PRs Merged', value: data.prsMerged7d, color: 'text-green-400' },
+    { label: 'PRs Open', value: data.totalOpenPrs, color: 'text-blue-400' },
+    { label: 'Issues Open', value: data.totalOpenIssues, color: 'text-yellow-400' },
+    { label: 'Issues Closed', value: data.issuesClosed7d, color: 'text-purple-400' },
+    { label: 'Branches', value: data.totalBranches, color: 'text-gray-400' },
+  ]
+
+  return (
+    <div className="mt-4 pt-4 border-t border-white/[0.06]">
+      <p className="text-gray-500 text-xs font-medium uppercase tracking-wider mb-3">Activity (7d)</p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {items.map(item => (
+          <div key={item.label} className="bg-black/30 rounded-lg p-3 border border-gray-800/30 text-center">
+            <p className={`text-lg font-bold ${item.color}`}>{item.value}</p>
+            <p className="text-gray-600 text-[10px] mt-0.5">{item.label}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ============================================
 // Repo List (Updated)
 // ============================================
@@ -652,7 +696,7 @@ function RepoList() {
     refetchInterval: 3600000,
     refetchOnWindowFocus: true,
   })
-  type SectionType = 'history' | 'commits' | 'prs' | 'issues' | 'branches' | 'releases'
+  type SectionType = 'history' | 'commits' | 'prs' | 'issues' | 'branches' | 'releases' | 'activity'
   const [expandedId, setExpandedId] = useState<{ repoId: number; type: SectionType } | null>(null)
   const [repoToDelete, setRepoToDelete] = useState<TrackedRepo | null>(null)
   const removeMutation = useMutation({
@@ -774,10 +818,11 @@ function RepoList() {
 
               <div className="flex items-center gap-1 shrink-0">
                 <div className="flex items-center gap-0.5 flex-wrap justify-end">
-                  {(['history', 'commits', 'prs', 'issues', 'branches', 'releases'] as SectionType[]).map(type => {
+                  {(['history', 'commits', 'prs', 'issues', 'branches', 'releases', 'activity'] as SectionType[]).map(type => {
                     const labels: Record<SectionType, string> = {
                       history: 'History', commits: 'Commits', prs: 'PRs',
                       issues: 'Issues', branches: 'Branches', releases: 'Releases',
+                      activity: 'Activity',
                     }
                     const isActive = expandedId?.repoId === repo.id && expandedId?.type === type
                     return (
@@ -826,6 +871,9 @@ function RepoList() {
             )}
             {expandedId?.repoId === repo.id && expandedId?.type === 'releases' && (
               <RepoReleases repoId={repo.id} fullName={repo.repository.fullName} />
+            )}
+            {expandedId?.repoId === repo.id && expandedId?.type === 'activity' && (
+              <ActivitySection repoId={repo.id} />
             )}
           </div>
         )

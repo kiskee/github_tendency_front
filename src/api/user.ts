@@ -126,10 +126,6 @@ export interface ActivitySummary {
   totalOpenIssues: number
 }
 
-export interface MeResponse {
-  user: User
-}
-
 export interface TokenStatus {
   hasToken: boolean
   token: string | null
@@ -152,10 +148,6 @@ export interface PaginatedResponse<T> {
 // ============================================
 // API Functions
 // ============================================
-
-export async function getMe(): Promise<MeResponse> {
-  return request('/me')
-}
 
 export async function updateProfile(data: { name?: string; phone?: string; company?: string; country?: string }): Promise<{ user: User }> {
   return request('/me', { method: 'PUT', body: JSON.stringify(data) })

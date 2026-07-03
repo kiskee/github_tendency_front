@@ -1,8 +1,9 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Helmet } from 'react-helmet-async'
 import { useAuth } from '../context/AuthContext'
-import { getGithubTokenStatus, saveGithubToken, deleteGithubToken, updateProfile, getTrackedRepos, getPreferences, updatePreferences, type UserPreferences } from '../api/user'
+import { getGithubTokenStatus, saveGithubToken, deleteGithubToken, updateProfile, getTrackedRepos, getPreferences, updatePreferences, deleteAccount, type UserPreferences } from '../api/user'
 
 function NotificationsSection() {
   const queryClient = useQueryClient()
@@ -406,6 +407,90 @@ function PlanSection() {
   )
 }
 
+function DangerZone() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [confirmEmail, setConfirmEmail] = useState('')
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteAccount,
+    onSuccess: () => {
+      logout()
+      navigate('/')
+    },
+  })
+
+  const handleDelete = () => {
+    if (confirmEmail === user?.email) {
+      deleteMutation.mutate()
+    }
+  }
+
+  return (
+    <div className="bg-black/40 backdrop-blur-2xl rounded-2xl p-6 border border-red-500/20">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-red-400">Danger Zone</h3>
+          <p className="text-gray-500 text-xs">Irreversible actions</p>
+        </div>
+      </div>
+
+      {!showConfirm ? (
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-white">Delete account</p>
+            <p className="text-[10px] text-gray-600">Permanently delete your account and all data</p>
+          </div>
+          <button
+            onClick={() => setShowConfirm(true)}
+            className="px-4 py-2 text-sm text-red-400 border border-red-500/30 rounded-xl hover:bg-red-500/10 transition-colors"
+          >
+            Delete Account
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm text-gray-400">
+            Type <span className="text-red-400 font-medium">{user?.email}</span> to confirm deletion.
+          </p>
+          <input
+            type="email"
+            value={confirmEmail}
+            onChange={e => setConfirmEmail(e.target.value)}
+            placeholder="Enter your email"
+            className="w-full bg-gray-900/60 border border-red-500/30 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-red-500/50 text-sm"
+          />
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => { setShowConfirm(false); setConfirmEmail('') }}
+              disabled={deleteMutation.isPending}
+              className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={confirmEmail !== user?.email || deleteMutation.isPending}
+              className="bg-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed px-5 py-2.5 rounded-xl font-medium transition-all text-sm"
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Permanently Delete'}
+            </button>
+          </div>
+          {deleteMutation.isError && (
+            <p className="text-red-400 text-xs">{deleteMutation.error instanceof Error ? deleteMutation.error.message : 'Failed to delete'}</p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function UserConfig() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
@@ -429,6 +514,7 @@ export default function UserConfig() {
       <TokenSection />
       <NotificationsSection />
       <PlanSection />
+      <DangerZone />
     </div>
   )
 }

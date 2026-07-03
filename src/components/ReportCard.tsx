@@ -78,12 +78,14 @@ export default function ReportCard({ report }: { report: PeriodicReport }) {
             </div>
           )}
 
-          <div className="mt-3 pt-3 border-t border-white/[0.04]">
-            <p className="text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2">Full Summary</p>
-            <pre className="text-[11px] text-gray-400 whitespace-pre-wrap font-mono leading-relaxed">
-              {data.summary}
-            </pre>
-          </div>
+          {data.most_active_repos.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-white/[0.04]">
+              <p className="text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2">Full Summary</p>
+              <pre className="text-[11px] text-gray-400 whitespace-pre-wrap font-mono leading-relaxed">
+                {data.summary}
+              </pre>
+            </div>
+          )}
         </div>
       )}
     </div>
