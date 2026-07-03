@@ -24,7 +24,6 @@ import {
   getRepoIssues,
   getRepoBranches,
   getRepoReleases,
-  getRepoActivity,
   getRepoScanHistory,
   getReports,
   type TrackedRepo,
@@ -396,46 +395,6 @@ function RepoCommits({ repoId, fullName }: { repoId: number; fullName: string })
           </button>
         </div>
       )}
-    </div>
-  )
-}
-
-// ============================================
-// Activity Summary Card
-// ============================================
-
-function ActivityCard({ repoId }: { repoId: number }) {
-  const { data, isLoading } = useQuery({
-    queryKey: ['repo-activity', repoId],
-    queryFn: () => getRepoActivity(repoId),
-  })
-
-  if (isLoading) {
-    return <div className="flex items-center gap-2 py-2"><div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" /><span className="text-gray-500 text-xs">Loading activity...</span></div>
-  }
-
-  if (!data) return null
-
-  const items = [
-    { label: 'Commits (7d)', value: data.commits7d, color: 'text-orange-400' },
-    { label: 'PRs Merged', value: data.prsMerged7d, color: 'text-green-400' },
-    { label: 'PRs Open', value: data.totalOpenPrs, color: 'text-blue-400' },
-    { label: 'Issues Open', value: data.totalOpenIssues, color: 'text-yellow-400' },
-    { label: 'Issues Closed', value: data.issuesClosed7d, color: 'text-purple-400' },
-    { label: 'Branches', value: data.totalBranches, color: 'text-gray-400' },
-  ]
-
-  return (
-    <div className="mt-3 pt-3 border-t border-white/[0.06]">
-      <p className="text-gray-500 text-[10px] font-medium uppercase tracking-wider mb-2">Activity (7d)</p>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {items.map(item => (
-          <div key={item.label} className="text-center">
-            <p className={`text-sm font-bold ${item.color}`}>{item.value}</p>
-            <p className="text-gray-600 text-[9px]">{item.label}</p>
-          </div>
-        ))}
-      </div>
     </div>
   )
 }
