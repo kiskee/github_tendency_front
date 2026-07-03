@@ -41,6 +41,14 @@ function NotificationsSection() {
     { value: '24h', label: 'Every 24 hours' },
   ]
 
+  const toggleEnabled = () => {
+    updateMutation.mutate({ email_reports_enabled: !prefs?.email_reports_enabled })
+  }
+
+  const setFrequency = (freq: UserPreferences['email_frequency']) => {
+    updateMutation.mutate({ email_reports_enabled: true, email_frequency: freq })
+  }
+
   return (
     <div className="bg-black/40 backdrop-blur-2xl rounded-2xl p-6 border border-white/[0.06]">
       <div className="flex items-center gap-3 mb-4">
@@ -62,7 +70,8 @@ function NotificationsSection() {
             <p className="text-[10px] text-gray-600">Get summaries of commits, PRs, issues, and stars</p>
           </div>
           <button
-            onClick={() => updateMutation.mutate({ email_reports_enabled: !prefs?.email_reports_enabled })}
+            onClick={toggleEnabled}
+            disabled={updateMutation.isPending}
             className={`relative w-11 h-6 rounded-full transition-colors ${
               prefs?.email_reports_enabled ? 'bg-orange-600' : 'bg-gray-700'
             }`}
@@ -82,7 +91,8 @@ function NotificationsSection() {
               {frequencies.map((freq) => (
                 <button
                   key={freq.value}
-                  onClick={() => updateMutation.mutate({ email_frequency: freq.value })}
+                  onClick={() => setFrequency(freq.value)}
+                  disabled={updateMutation.isPending}
                   className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                     prefs.email_frequency === freq.value
                       ? 'bg-orange-600 text-white'
