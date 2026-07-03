@@ -32,7 +32,7 @@ export default function VerifyEmail() {
   return (
     <div className="max-w-md mx-auto">
       <Helmet>
-        <title>Verify Email — GitHub Tendency</title>
+        <title>Verify Email — RepoTendency</title>
       </Helmet>
       <div className="bg-black/40 backdrop-blur-2xl rounded-2xl p-6 sm:p-8 border border-white/[0.06] text-center">
         {status === 'loading' && (

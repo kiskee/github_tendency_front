@@ -289,9 +289,9 @@ export default function UserConfig() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <Helmet>
-        <title>Account Settings — GitHub Tendency</title>
-        <meta property="og:title" content="Account Settings — GitHub Tendency" />
-        <meta name="twitter:title" content="Account Settings — GitHub Tendency" />
+        <title>Account Settings — RepoTendency</title>
+        <meta property="og:title" content="Account Settings — RepoTendency" />
+        <meta name="twitter:title" content="Account Settings — RepoTendency" />
       </Helmet>
 
       <div className="flex items-center gap-4 justify-center">

@@ -18,7 +18,7 @@ export default function Login() {
     setIsSubmitting(true)
     try {
       await login(email, password)
-      navigate('/home')
+      navigate('/tracking')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
     } finally {
@@ -29,7 +29,7 @@ export default function Login() {
   return (
     <div className="max-w-md mx-auto">
       <Helmet>
-        <title>Login — GitHub Tendency</title>
+        <title>Login — RepoTendency</title>
       </Helmet>
       <div className="bg-black/40 backdrop-blur-2xl rounded-2xl p-6 sm:p-8 border border-white/[0.06]">
         <h2 className="text-2xl font-bold text-orange-500 mb-2">Login</h2>

@@ -840,9 +840,9 @@ export default function Home() {
   return (
     <div className="space-y-6">
       <Helmet>
-        <title>Tracking — GitHub Tendency</title>
-        <meta property="og:title" content="Tracking — GitHub Tendency" />
-        <meta name="twitter:title" content="Tracking — GitHub Tendency" />
+        <title>Tracking — RepoTendency</title>
+        <meta property="og:title" content="Tracking — RepoTendency" />
+        <meta name="twitter:title" content="Tracking — RepoTendency" />
       </Helmet>
 
       <div className="flex items-center gap-4">

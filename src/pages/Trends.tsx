@@ -95,9 +95,9 @@ export default function Trends() {
   return (
     <div>
       <Helmet>
-        <title>Trends — GitHub Tendency</title>
-        <meta property="og:title" content="Trends — GitHub Tendency" />
-        <meta name="twitter:title" content="Trends — GitHub Tendency" />
+        <title>Trends — RepoTendency</title>
+        <meta property="og:title" content="Trends — RepoTendency" />
+        <meta name="twitter:title" content="Trends — RepoTendency" />
       </Helmet>
 
       <div className="flex flex-col gap-4 mb-6">

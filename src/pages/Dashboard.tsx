@@ -48,7 +48,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   return null
 }
 
-const WELCOME_KEY = 'github-tendency-welcome-dismissed-at'
+const WELCOME_KEY = 'repotendency-welcome-dismissed-at'
 const WELCOME_INTERVAL_DAYS = 1
 
 function shouldShowWelcome(): boolean {
@@ -171,9 +171,9 @@ export default function Dashboard() {
     <div className="space-y-6 pb-8">
       {showWelcome && <WelcomeModal onDismiss={dismissWelcome} />}
       <Helmet>
-        <title>Dashboard — GitHub Tendency</title>
-        <meta property="og:title" content="Dashboard — GitHub Tendency" />
-        <meta name="twitter:title" content="Dashboard — GitHub Tendency" />
+        <title>Dashboard — RepoTendency</title>
+        <meta property="og:title" content="Dashboard — RepoTendency" />
+        <meta name="twitter:title" content="Dashboard — RepoTendency" />
       </Helmet>
       <div className="flex items-center gap-4">
         <div className="h-8 w-1 bg-gradient-to-b from-orange-500 to-red-600 rounded-full" />
