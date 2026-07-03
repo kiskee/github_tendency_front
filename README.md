@@ -1,4 +1,4 @@
-# GitHub Tendency — Frontend
+# RepoTendency — Frontend
 
 Real-time GitHub repository trends dashboard. Track stars, forks, languages, and keywords across trending open-source repos.
 
