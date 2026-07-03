@@ -179,6 +179,7 @@ function RepoHistory({ repoId }: { repoId: number }) {
   const { data: scanData, isLoading: scanLoading } = useQuery({
     queryKey: ['repo-scan-history', repoId],
     queryFn: () => getRepoScanHistory(repoId, 10),
+    refetchInterval: 300000,
   })
 
   if (isLoading || scanLoading) {
@@ -637,6 +638,7 @@ function RepoList() {
   const { data, isLoading } = useQuery({
     queryKey: ['tracked-repos'],
     queryFn: getTrackedRepos,
+    refetchInterval: 300000,
   })
   type SectionType = 'history' | 'commits' | 'prs' | 'issues' | 'branches' | 'releases'
   const [expandedId, setExpandedId] = useState<{ repoId: number; type: SectionType } | null>(null)
@@ -856,6 +858,7 @@ function ReportsSection() {
   const { data, isLoading } = useQuery({
     queryKey: ['reports', page],
     queryFn: () => getReports(limit, page * limit),
+    refetchInterval: 600000,
   })
 
   if (isLoading) {
