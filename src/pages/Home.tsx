@@ -12,8 +12,6 @@ import {
 } from 'recharts'
 import { useAuth } from '../context/AuthContext'
 import {
-  getGithubTokenStatus,
-  saveGithubToken,
   getTrackedRepos,
   addTrackedRepo,
   removeTrackedRepo,
@@ -77,127 +75,6 @@ function formatRelativeTime(iso: string): string {
   if (diffHours < 24) return `${diffHours}h ago`
   if (diffDays < 7) return `${diffDays}d ago`
   return formatDate(iso)
-}
-
-function ProfileCard() {
-  const { user } = useAuth()
-  return (
-    <div className="bg-black/40 backdrop-blur-2xl rounded-2xl p-5 border border-white/[0.06] hover:border-orange-500/20 transition-all duration-300 animate-fade-up">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 flex items-center justify-center text-orange-500 font-bold text-lg shrink-0">
-            {user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || '?'}
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-lg font-bold text-white truncate">{user?.name || 'User'}</h2>
-            <p className="text-gray-500 text-xs truncate">{user?.email}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400 mb-3">
-        <span className="px-2 py-0.5 font-medium text-orange-500 bg-orange-500/10 border border-orange-500/20 rounded-full">
-          Free Plan
-        </span>
-        <span className="text-gray-600">·</span>
-        <span>Member since {new Date(user?.created_at || '').toLocaleDateString()}</span>
-        <span className="text-gray-600">·</span>
-        <span>{user?.role}</span>
-      </div>
-
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-        {user?.company && <span>🏢 {user.company}</span>}
-        {user?.country && <span>🌍 {user.country}</span>}
-        {user?.phone && <span>📱 {user.phone}</span>}
-      </div>
-    </div>
-  )
-}
-
-function TokenSection() {
-  const queryClient = useQueryClient()
-  const [token, setToken] = useState('')
-  const { data, isLoading } = useQuery({
-    queryKey: ['github-token-status'],
-    queryFn: getGithubTokenStatus,
-  })
-  const mutation = useMutation({
-    mutationFn: saveGithubToken,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['github-token-status'] })
-      setToken('')
-    },
-  })
-
-  return (
-    <div className="bg-black/40 backdrop-blur-2xl rounded-2xl p-6 border border-white/[0.06] hover:border-orange-500/20 transition-all duration-300 animate-fade-up">
-      <div className="flex items-center gap-3 mb-4">
-        <div>
-          <h3 className="text-lg font-semibold text-white">GitHub Token</h3>
-          <p className="text-gray-500 text-xs">Required to track private repos or avoid rate limits</p>
-        </div>
-      </div>
-
-      <p className="text-gray-500 text-sm mb-4">
-        Stored encrypted with AES-256-GCM.{' '}
-        <a
-          href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-orange-400 hover:underline"
-        >
-          Learn more
-        </a>
-      </p>
-
-      {isLoading ? (
-        <div className="flex items-center gap-2 text-sm mb-4">
-          <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-gray-500">Loading...</span>
-        </div>
-      ) : (
-        <div className="flex items-center gap-2 text-sm mb-4">
-          <span className={`w-2 h-2 rounded-full ${data?.hasToken ? 'bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]' : 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]'}`} />
-          <span className="text-gray-400">{data?.hasToken ? `Connected: ${data.token}` : 'Not connected'}</span>
-        </div>
-      )}
-
-      <form
-        onSubmit={e => {
-          e.preventDefault()
-          if (token.trim()) mutation.mutate(token.trim())
-        }}
-        className="flex flex-col sm:flex-row gap-3"
-      >
-        <input
-          type="password"
-          value={token}
-          onChange={e => setToken(e.target.value)}
-          placeholder="ghp_xxxx..."
-          className="flex-1 bg-gray-900/60 border border-gray-800/50 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-orange-600/50 focus:ring-1 focus:ring-orange-600/20 transition-all"
-        />
-        <button
-          type="submit"
-          disabled={mutation.isPending || !token.trim()}
-          className="bg-orange-600 hover:bg-orange-700 disabled:opacity-50 px-5 py-2.5 rounded-xl font-medium transition-all hover:shadow-lg hover:shadow-orange-600/20 active:scale-95"
-        >
-          {mutation.isPending ? 'Saving...' : 'Save Token'}
-        </button>
-      </form>
-
-      {mutation.isSuccess && (
-        <div className="mt-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-sm">
-          Token saved successfully!
-        </div>
-      )}
-
-      {mutation.isError && (
-        <div className="mt-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-          {mutation.error instanceof Error ? mutation.error.message : 'Failed to save token'}
-        </div>
-      )}
-    </div>
-  )
 }
 
 function AddRepoSection() {
@@ -978,29 +855,22 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 items-start">
-        <div className="space-y-6 lg:sticky lg:top-24 lg:self-start">
-          <ProfileCard />
-        </div>
+      <div className="space-y-6">
+        <AddRepoSection />
 
-        <div className="space-y-6 min-w-0">
-          <TokenSection />
-          <AddRepoSection />
-
-          <div className="bg-black/40 backdrop-blur-2xl rounded-2xl p-6 border border-white/[0.06] hover:border-orange-500/20 transition-all duration-300 animate-fade-up">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-white">Tracked repositories</h3>
-                <p className="text-gray-500 text-xs">Your tracked repositories with real-time data</p>
-              </div>
+        <div className="bg-black/40 backdrop-blur-2xl rounded-2xl p-6 border border-white/[0.06] hover:border-orange-500/20 transition-all duration-300 animate-fade-up">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+              </svg>
             </div>
-            <RepoList />
+            <div>
+              <h3 className="text-lg font-semibold text-white">Tracked repositories</h3>
+              <p className="text-gray-500 text-xs">Your tracked repositories with real-time data</p>
+            </div>
           </div>
+          <RepoList />
         </div>
       </div>
     </div>

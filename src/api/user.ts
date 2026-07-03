@@ -157,11 +157,23 @@ export async function getMe(): Promise<MeResponse> {
   return request('/me')
 }
 
+export async function updateProfile(data: { name?: string; phone?: string; company?: string; country?: string }): Promise<{ user: User }> {
+  return request('/me', { method: 'PUT', body: JSON.stringify(data) })
+}
+
+export async function deleteAccount(): Promise<{ message: string }> {
+  return request('/me', { method: 'DELETE' })
+}
+
 export async function saveGithubToken(token: string): Promise<{ message: string }> {
   return request('/me/github-token', {
     method: 'POST',
     body: JSON.stringify({ token }),
   })
+}
+
+export async function deleteGithubToken(): Promise<{ message: string }> {
+  return request('/me/github-token', { method: 'DELETE' })
 }
 
 export async function getGithubTokenStatus(): Promise<TokenStatus> {

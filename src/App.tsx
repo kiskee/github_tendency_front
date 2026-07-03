@@ -1,5 +1,6 @@
+import { useState, useRef, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Routes, Route, NavLink, Link } from 'react-router-dom'
+import { Routes, Route, NavLink, Link, useNavigate } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
 import Search from './pages/Search'
 import Trends from './pages/Trends'
@@ -7,10 +8,72 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import VerifyEmail from './pages/VerifyEmail'
 import Home from './pages/Home'
+import UserConfig from './pages/UserConfig'
 import Footer from './components/Footer'
 import ProtectedRoute from './components/ProtectedRoute'
 import { getHealth } from './api/health'
 import { useAuth } from './context/AuthContext'
+
+function UserMenu() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  if (!user) return null
+
+  const initials = user.name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || '?'
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 flex items-center justify-center text-orange-500 font-bold text-sm hover:border-orange-500/50 transition-colors"
+      >
+        {initials}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-48 bg-gray-900 border border-gray-700/50 rounded-xl shadow-xl z-50 py-1">
+          <div className="px-3 py-2 border-b border-gray-800">
+            <p className="text-white text-sm font-medium truncate">{user.name || 'User'}</p>
+            <p className="text-gray-500 text-xs truncate">{user.email}</p>
+          </div>
+          <button
+            onClick={() => { navigate('/user'); setOpen(false) }}
+            className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            Account Settings
+          </button>
+          <div className="border-t border-gray-800 mt-1 pt-1">
+            <button
+              onClick={() => { logout(); setOpen(false) }}
+              className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-gray-800 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Logout
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 function App() {
   const health = useQuery({
@@ -19,7 +82,7 @@ function App() {
     refetchInterval: 30_000,
   })
 
-  const { user, isLoading: authLoading, logout } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const isOnline = health.isSuccess && health.data?.status === 'OK'
 
   return (
@@ -41,7 +104,7 @@ function App() {
           Trends
         </NavLink>
         {user && (
-          <NavLink to="/home" className={({ isActive }) => `text-sm sm:text-base pb-1 border-b-2 transition-colors ${isActive ? 'text-white border-orange-500' : 'text-gray-500 hover:text-orange-400 border-transparent'}`}>
+          <NavLink to="/tracking" className={({ isActive }) => `text-sm sm:text-base pb-1 border-b-2 transition-colors ${isActive ? 'text-white border-orange-500' : 'text-gray-500 hover:text-orange-400 border-transparent'}`}>
             Tracking
           </NavLink>
         )}
@@ -49,12 +112,7 @@ function App() {
         <div className="ml-auto flex items-center gap-3">
           {!authLoading && (
             user ? (
-              <button
-                onClick={() => logout()}
-                className="text-xs sm:text-sm text-gray-500 hover:text-orange-400 transition-colors"
-              >
-                Logout
-              </button>
+              <UserMenu />
             ) : (
               <div className="flex items-center gap-3">
                 <Link to="/login" className="text-xs sm:text-sm text-gray-500 hover:text-orange-400 transition-colors">
@@ -81,7 +139,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/tracking" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/user" element={<ProtectedRoute><UserConfig /></ProtectedRoute>} />
         </Routes>
       </main>
 
