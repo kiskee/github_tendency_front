@@ -268,7 +268,7 @@ function RepoHistory({ repoId }: { repoId: number }) {
                     {scan.delta_text}
                   </p>
                 )}
-                <div className="grid grid-cols-4 gap-2 text-[10px]">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]">
                   <div className="text-center">
                     <p className="text-orange-400 font-medium">{scan.commits_found}</p>
                     <p className="text-gray-600">Commits</p>
@@ -428,7 +428,7 @@ function ActivityCard({ repoId }: { repoId: number }) {
   return (
     <div className="mt-3 pt-3 border-t border-white/[0.06]">
       <p className="text-gray-500 text-[10px] font-medium uppercase tracking-wider mb-2">Activity (7d)</p>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {items.map(item => (
           <div key={item.label} className="text-center">
             <p className={`text-sm font-bold ${item.color}`}>{item.value}</p>
@@ -470,7 +470,7 @@ function RepoPRs({ repoId, fullName }: { repoId: number; fullName: string }) {
 
   return (
     <div className="mt-4 pt-4 border-t border-white/[0.06]">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
         <p className="text-gray-500 text-xs font-medium uppercase tracking-wider">Pull Requests · {fullName}</p>
         <div className="flex gap-1">
           {['', 'OPEN', 'MERGED', 'CLOSED'].map(s => (
@@ -541,7 +541,7 @@ function RepoIssues({ repoId, fullName }: { repoId: number; fullName: string }) 
 
   return (
     <div className="mt-4 pt-4 border-t border-white/[0.06]">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
         <p className="text-gray-500 text-xs font-medium uppercase tracking-wider">Issues · {fullName}</p>
         <div className="flex gap-1">
           {['', 'OPEN', 'CLOSED'].map(s => (
@@ -750,6 +750,9 @@ function RepoList() {
                     <span className="text-red-500 font-medium">⭐ {formatNumber(repo.repository.stars)}</span>
                     <span className="text-gray-500">⑂ {formatNumber(repo.repository.forks)} forks</span>
                     <span className="text-orange-400 font-medium">🔥 {repo.repository.score.toLocaleString()}</span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[10px]">
                     <span className="text-green-400">+24h {repo.repository.stars24h}</span>
                     <span className="text-blue-400">+7d {repo.repository.stars7d}</span>
                   </div>
@@ -786,36 +789,40 @@ function RepoList() {
               {/* Activity Summary Card */}
               {expandedId?.repoId === repo.id && <ActivityCard repoId={repo.id} />}
 
-              <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                {(['history', 'commits', 'prs', 'issues', 'branches', 'releases'] as SectionType[]).map(type => {
-                  const labels: Record<SectionType, string> = {
-                    history: 'History', commits: 'Commits', prs: 'PRs',
-                    issues: 'Issues', branches: 'Branches', releases: 'Releases',
-                  }
-                  const isActive = expandedId?.repoId === repo.id && expandedId?.type === type
-                  return (
-                    <button key={type}
-                      onClick={() => setExpandedId(isActive ? null : { repoId: repo.id, type })}
-                      className={`text-[10px] transition-colors px-1.5 py-0.5 rounded ${isActive ? 'text-orange-400 bg-orange-500/10' : 'text-gray-500 hover:text-orange-400 hover:bg-orange-500/10'}`}>
-                      {labels[type]}
-                    </button>
-                  )
-                })}
-                <button
-                  onClick={() => refreshAllMutation.mutate(repo.id)}
-                  disabled={refreshAllMutation.isPending}
-                  className="text-[10px] text-gray-500 hover:text-green-400 transition-colors px-1.5 py-0.5 rounded hover:bg-green-500/10 disabled:opacity-40"
-                  title="Refresh all data"
-                >
-                  {refreshAllMutation.isPending ? '...' : '↻'}
-                </button>
-                <button
-                  onClick={() => removeMutation.mutate(repo.id)}
-                  disabled={removeMutation.isPending}
-                  className="text-[10px] text-red-400 hover:text-red-300 transition-colors px-1.5 py-0.5 rounded hover:bg-red-500/10"
-                >
-                  ✕
-                </button>
+              <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-0.5 flex-wrap justify-end">
+                  {(['history', 'commits', 'prs', 'issues', 'branches', 'releases'] as SectionType[]).map(type => {
+                    const labels: Record<SectionType, string> = {
+                      history: 'History', commits: 'Commits', prs: 'PRs',
+                      issues: 'Issues', branches: 'Branches', releases: 'Releases',
+                    }
+                    const isActive = expandedId?.repoId === repo.id && expandedId?.type === type
+                    return (
+                      <button key={type}
+                        onClick={() => setExpandedId(isActive ? null : { repoId: repo.id, type })}
+                        className={`text-[10px] sm:text-[10px] transition-colors px-1.5 py-0.5 rounded ${isActive ? 'text-orange-400 bg-orange-500/10' : 'text-gray-500 hover:text-orange-400 hover:bg-orange-500/10'}`}>
+                        {labels[type]}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="flex items-center gap-0.5 ml-1 border-l border-white/[0.06] pl-1">
+                  <button
+                    onClick={() => refreshAllMutation.mutate(repo.id)}
+                    disabled={refreshAllMutation.isPending}
+                    className="text-[10px] text-gray-500 hover:text-green-400 transition-colors px-1 py-0.5 rounded hover:bg-green-500/10 disabled:opacity-40"
+                    title="Refresh all data"
+                  >
+                    {refreshAllMutation.isPending ? '...' : '↻'}
+                  </button>
+                  <button
+                    onClick={() => removeMutation.mutate(repo.id)}
+                    disabled={removeMutation.isPending}
+                    className="text-[10px] text-red-400 hover:text-red-300 transition-colors px-1 py-0.5 rounded hover:bg-red-500/10"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
             </div>
 
